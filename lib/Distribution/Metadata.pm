@@ -146,7 +146,7 @@ sub _abs_path {
     my @out;
     for my $dir (@$dirs) {
         my $abs = eval { Cwd::abs_path($dir) };
-        push @out, $abs;
+        push @out, $abs if $abs;
     }
     \@out;
 }
