@@ -216,13 +216,13 @@ That is, this module tries to gather
 
 =over 4
 
-=item .packlist file
+=item C<.packlist> file
 
-=item .meta directory
+=item C<.meta> directory
 
-=item install.json file
+=item C<install.json> file
 
-=item MYMETA.json (or MYMETA.yml) file
+=item C<MYMETA.json> (or C<MYMETA.yml>) file
 
 =back
 
@@ -230,7 +230,7 @@ That is, this module tries to gather
 
 =over 4
 
-=item $info = $class->new_from_module($module, inc => \@dirs)
+=item C<< my $info = $class->new_from_module($module, inc => \@dirs) >>
 
 Create Distribution::Metadata instance from module name.
 You can append C<inc> argument
@@ -240,7 +240,7 @@ Please note that, even if the module cannot be found,
 C<new_from_module> returns a Distribution::Metadata instance.
 However almost all methods returns C<undef> for such objects.
 
-=item $info = $class->new_from_file($file, inc => \@dirs)
+=item C<< my $info = $class->new_from_file($file, inc => \@dirs) >>
 
 Create Distribution::Metadata instance from file path.
 You can append C<inc> argument too.
@@ -254,31 +254,31 @@ even if file cannot be found.
 
 =over 4
 
-=item my $file = $info->packlist
+=item C<< my $file = $info->packlist >>
 
 C<.packlist> file path
 
-=item my $dir = $info->meta_directory
+=item C<< my $dir = $info->meta_directory >>
 
 C<.meta> directory path
 
-=item my $file = $info->mymeta
+=item C<< my $file = $info->mymeta >>
 
 C<MYMETA.json> (or C<MYMETA.yml>) file path
 
-=item my $main_module = $info->main_module
+=item C<< my $main_module = $info->main_module >>
 
 main module name
 
-=item my $version = $info->main_module_version
+=item C<< my $version = $info->main_module_version >>
 
 main module version
 
-=item my $files = $info->files
+=item C<< my $files = $info->files >>
 
 file paths which is listed in C<.packlist> file
 
-=item my $hash = $info->install_json_hash
+=item C<< my $hash = $info->install_json_hash >>
 
 a hash reference for C<install.json>
 
@@ -289,7 +289,7 @@ a hash reference for C<install.json>
     $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
     ...
 
-=item my $hash = $info->mymeta_hash
+=item C<< my $hash = $info->mymeta_hash >>
 
 a hash reference for C<MYMETA.json> (or C<MYMETA.yml>)
 

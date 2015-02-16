@@ -35,14 +35,14 @@ Distribution::Metadata - gather distribution metadata
 Distribution::Metadata gathers distribution metadata in local.
 That is, this module tries to gather
 
-- .packlist file
-- .meta directory
-- install.json file
-- MYMETA.json (or MYMETA.yml) file
+- `.packlist` file
+- `.meta` directory
+- `install.json` file
+- `MYMETA.json` (or `MYMETA.yml`) file
 
 ## CONSTRUCTORS
 
-- $info = $class->new\_from\_module($module, inc => \\@dirs)
+- `my $info = $class->new_from_module($module, inc => \@dirs)`
 
     Create Distribution::Metadata instance from module name.
     You can append `inc` argument
@@ -52,7 +52,7 @@ That is, this module tries to gather
     `new_from_module` returns a Distribution::Metadata instance.
     However almost all methods returns `undef` for such objects.
 
-- $info = $class->new\_from\_file($file, inc => \\@dirs)
+- `my $info = $class->new_from_file($file, inc => \@dirs)`
 
     Create Distribution::Metadata instance from file path.
     You can append `inc` argument too.
@@ -62,31 +62,31 @@ That is, this module tries to gather
 
 ## METHODS
 
-- my $file = $info->packlist
+- `my $file = $info->packlist`
 
     `.packlist` file path
 
-- my $dir = $info->meta\_directory
+- `my $dir = $info->meta_directory`
 
     `.meta` directory path
 
-- my $file = $info->mymeta
+- `my $file = $info->mymeta`
 
     `MYMETA.json` (or `MYMETA.yml`) file path
 
-- my $main\_module = $info->main\_module
+- `my $main_module = $info->main_module`
 
     main module name
 
-- my $version = $info->main\_module\_version
+- `my $version = $info->main_module_version`
 
     main module version
 
-- my $files = $info->files
+- `my $files = $info->files`
 
     file paths which is listed in `.packlist` file
 
-- my $hash = $info->install\_json\_hash
+- `my $hash = $info->install_json_hash`
 
     a hash reference for `install.json`
 
@@ -97,7 +97,7 @@ That is, this module tries to gather
         $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
         ...
 
-- my $hash = $info->mymeta\_hash
+- `my $hash = $info->mymeta_hash`
 
     a hash reference for `MYMETA.json` (or `MYMETA.yml`)
 
