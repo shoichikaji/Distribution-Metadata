@@ -42,6 +42,7 @@ sub new_from_file {
         $self->{main_module} = $main_module;
         if ($main_module eq "perl") {
             $self->{main_module_version} = $^V;
+            $self->{main_module_path} = $^X;
             return $self;
         }
     } else {
@@ -55,6 +56,7 @@ sub new_from_file {
     return $self unless $metadata;
 
     $self->{main_module_version} = $metadata->version;
+    $self->{main_module_path} = $metadata->filename;
 
     my ($meta_directory, $install_json, $mymeta)
         = $class->_find_meta($metadata->name, $metadata->version, $archlib);
@@ -142,6 +144,7 @@ sub install_json { shift->{install_json} }
 sub mymeta { shift->{mymeta} }
 sub main_module { shift->{main_module} }
 sub main_module_version { shift->{main_module_version} }
+sub main_module_path { shift->{main_module_path} }
 
 sub files {
     my $self = shift;
@@ -188,8 +191,10 @@ Distribution::Metadata - gather distribution metadata
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
 
-    print $info->main_module;
-    # LWP
+    print $info->main_module;         # LWP
+    print $info->main_module_version; # 6.08
+    print $info->main_module_path;    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
+
     print $info->packlist;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/auto/LWP/.packlist
     print $info->meta_directory;
@@ -199,7 +204,7 @@ Distribution::Metadata - gather distribution metadata
     print $info->mymeta;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/MYMETA.json
 
-    print "$_\n" for @{ $info->files };
+    print $_, "\n" for @{ $info->files };
     # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-download
     # ...
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
@@ -215,6 +220,8 @@ Distribution::Metadata gathers distribution metadata in local.
 That is, this module tries to gather
 
 =over 4
+
+=item main module name, version, path
 
 =item C<.packlist> file
 
@@ -273,6 +280,10 @@ main module name
 =item C<< my $version = $info->main_module_version >>
 
 main module version
+
+=item C<< my $path = $info->main_module_path >>
+
+main module path
 
 =item C<< my $files = $info->files >>
 

@@ -17,6 +17,7 @@ subtest core_module => sub {
     my $info = Distribution::Metadata->new_from_module("FindBin");
     is $info->main_module, "perl";
     is $info->main_module_version, $^V;
+    is $info->main_module_path, $^X;
     is ref($info->files), "ARRAY";
     is $info->meta_directory, undef;
     is $info->mymeta, undef;

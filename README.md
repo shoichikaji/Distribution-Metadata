@@ -9,8 +9,10 @@ Distribution::Metadata - gather distribution metadata
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
 
-    print $info->main_module;
-    # LWP
+    print $info->main_module;         # LWP
+    print $info->main_module_version; # 6.08
+    print $info->main_module_path;    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
+
     print $info->packlist;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/auto/LWP/.packlist
     print $info->meta_directory;
@@ -20,7 +22,7 @@ Distribution::Metadata - gather distribution metadata
     print $info->mymeta;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/MYMETA.json
 
-    print "$_\n" for @{ $info->files };
+    print $_, "\n" for @{ $info->files };
     # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-download
     # ...
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
@@ -35,6 +37,7 @@ Distribution::Metadata - gather distribution metadata
 Distribution::Metadata gathers distribution metadata in local.
 That is, this module tries to gather
 
+- main module name, version, path
 - `.packlist` file
 - `.meta` directory
 - `install.json` file
@@ -81,6 +84,10 @@ That is, this module tries to gather
 - `my $version = $info->main_module_version`
 
     main module version
+
+- `my $path = $info->main_module_path`
+
+    main module path
 
 - `my $files = $info->files`
 
