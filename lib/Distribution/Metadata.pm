@@ -252,21 +252,21 @@ Let me explain how C<< $class->new_from_module($module, inc => $inc) >> works.
 
 =over 4
 
-=item 1. Get C<$module_file> by
+=item Get C<$module_file> by
 
     Module::Metadata->new_from_module($module, inc => $inc)->filename.
 
-=item 2. Find C<$packlist> in which C<$module_file> is listed.
+=item Find C<$packlist> in which C<$module_file> is listed.
 
-=item 3. From C<$packlist> pathname (eg: ...auto/LWP/.packlist), determine C<$main_module> and main module search directory C<$lib>.
+=item From C<$packlist> pathname (eg: ...auto/LWP/.packlist), determine C<$main_module> and main module search directory C<$lib>.
 
-=item 4. Get C<$main_module_version> by
+=item Get C<$main_module_version> by
 
     Module::Metadata->new_from_module($main_module, inc => [$lib, "$lib/$Config{archname}"])->version
 
-=item 5. Find install.json that has "name" eq C<$main_module>, and provides C<$main_module> with version C<$main_module_version>.
+=item Find install.json that has "name" eq C<$main_module>, and provides C<$main_module> with version C<$main_module_version>.
 
-=item 6. Get .meta directory and MYMETA.json with install.json.
+=item Get .meta directory and MYMETA.json with install.json.
 
 =back
 

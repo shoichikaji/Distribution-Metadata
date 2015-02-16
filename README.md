@@ -47,18 +47,18 @@ That is, this module tries to gather
 
 Let me explain how `$class->new_from_module($module, inc => $inc)` works.
 
-- 1. Get `$module_file` by
+- Get `$module_file` by
 
         Module::Metadata->new_from_module($module, inc => $inc)->filename.
 
-- 2. Find `$packlist` in which `$module_file` is listed.
-- 3. From `$packlist` pathname (eg: ...auto/LWP/.packlist), determine `$main_module` and main module search directory `$lib`.
-- 4. Get `$main_module_version` by
+- Find `$packlist` in which `$module_file` is listed.
+- From `$packlist` pathname (eg: ...auto/LWP/.packlist), determine `$main_module` and main module search directory `$lib`.
+- Get `$main_module_version` by
 
         Module::Metadata->new_from_module($main_module, inc => [$lib, "$lib/$Config{archname}"])->version
 
-- 5. Find install.json that has "name" eq `$main_module`, and provides `$main_module` with version `$main_module_version`.
-- 6. Get .meta directory and MYMETA.json with install.json.
+- Find install.json that has "name" eq `$main_module`, and provides `$main_module` with version `$main_module_version`.
+- Get .meta directory and MYMETA.json with install.json.
 
 ## CONSTRUCTORS
 
