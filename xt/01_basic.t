@@ -65,6 +65,7 @@ subtest prefer => sub {
             "$tempdir/local2.07/lib/perl5/$Config{archname}",
         ],
     );
+    like $info->$_, qr/2\.06/ for qw(install_json mymeta meta_directory);
     is $info->install_json_hash->{version}, '2.06';
 };
 
