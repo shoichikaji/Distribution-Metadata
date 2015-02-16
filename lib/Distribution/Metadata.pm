@@ -10,12 +10,14 @@ use File::Find 'find';
 use JSON::PP ();
 use Module::Metadata;
 use File::Spec;
+use Cwd ();
 
 our $VERSION = "0.01";
 
 sub new_from_module {
     my ($class, $module, %option) = @_;
     my $inc = $option{inc} || \@INC;
+    $inc = $class->_abs_path($inc);
     my $metadata = Module::Metadata->new_from_module($module, inc => $inc);
     if ($metadata) {
         $class->new_from_file($metadata->filename, inc => $inc);
@@ -27,6 +29,7 @@ sub new_from_module {
 sub new_from_file {
     my ($class, $file, %option) = @_;
     my $inc = $option{inc} || \@INC;
+    $inc = $class->_abs_path($inc);
     my $self = bless {}, $class;
 
 
@@ -136,6 +139,16 @@ sub _find_packlist {
         no_chdir => 1,
     }, @$inc;
     return $packlist;
+}
+
+sub _abs_path {
+    my ($class, $dirs) = @_;
+    my @out;
+    for my $dir (@$dirs) {
+        my $abs = eval { Cwd::abs_path($dir) };
+        push @out, $abs;
+    }
+    \@out;
 }
 
 sub packlist { shift->{packlist} }

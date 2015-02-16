@@ -7,6 +7,8 @@ use File::Temp 'tempdir';
 use Config;
 use File::Find 'find';
 use File::Basename 'basename';
+use File::pushd 'tempd';
+use File::Spec;
 sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
 subtest basic => sub {
@@ -64,6 +66,23 @@ subtest prefer => sub {
         ],
     );
     is $info->install_json_hash->{version}, '2.06';
+};
+
+subtest abs_path => sub {
+    my $tempdir = tempd;
+    cpanm "-llocal", 'Test::TCP@2.07';
+    my $info = Distribution::Metadata->new_from_module(
+        "Test::TCP",
+        inc => [
+            "local/lib/perl5",
+            "local/lib/perl5/$Config{archname}",
+        ],
+    );
+
+    for my $method (qw(packlist mymeta install_json)) {
+        my $is_abs = File::Spec->file_name_is_absolute($info->$method);
+        ok $is_abs;
+    }
 };
 
 
