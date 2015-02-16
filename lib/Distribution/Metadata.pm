@@ -86,12 +86,12 @@ sub _guess_main_module {
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
     my ($meta_directory, $install_json, $mymeta);
-    my $json = JSON::PP->new->utf8(1);
+    my $json = JSON::PP->new;
     find {
         wanted => sub {
             return if $meta_directory;
             return unless -f $_ && basename($_) eq "install.json";
-            my $content = do { open my $fh, "<", $_ or return; local $/; <$fh> };
+            my $content = do { open my $fh, "<:utf8", $_ or return; local $/; <$fh> };
             my $hash = eval { $json->decode($content) } || +{};
 
             # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
