@@ -43,6 +43,17 @@ That is, this module tries to gather
 - `install.json` file
 - `MYMETA.json` (or `MYMETA.yml`) file
 
+# HOW IT WORKS
+
+Let me explain how `$class->new_from_module($module, inc => $inc)` works.
+
+- 1. Get $module\_file by Module::Metadata->new\_from\_module($module, inc => $inc)->filename.
+- 2. Find $packlist in which $module\_file is listed.
+- 3. From $packlist pathname (eg: .../auto/LWP/.packlist), determine $main\_module and main module search directory $lib.
+- 4. Get $main\_module\_version by Module::Metadata->new\_from\_module($main\_module, inc => \[$lib, "$lib/$Config{archname}"\])->version
+- 5. Find install.json that has "name" eq $main\_module, and provides $main\_module with version $main\_module\_version
+- 6. Get .meta directory and MYMETA.json with install.json.
+
 ## CONSTRUCTORS
 
 - `my $info = $class->new_from_module($module, inc => \@dirs)`

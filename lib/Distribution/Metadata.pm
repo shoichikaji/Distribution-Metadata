@@ -190,7 +190,7 @@ sub mymeta_hash {
 
 __END__
 
-=for stopwords .packlist inc
+=for stopwords .packlist inc pathname eg archname eq
 
 =encoding utf-8
 
@@ -243,6 +243,26 @@ That is, this module tries to gather
 =item C<install.json> file
 
 =item C<MYMETA.json> (or C<MYMETA.yml>) file
+
+=back
+
+=head1 HOW IT WORKS
+
+Let me explain how C<< $class->new_from_module($module, inc => $inc) >> works.
+
+=over 4
+
+=item 1. Get $module_file by Module::Metadata->new_from_module($module, inc => $inc)->filename.
+
+=item 2. Find $packlist in which $module_file is listed.
+
+=item 3. From $packlist pathname (eg: .../auto/LWP/.packlist), determine $main_module and main module search directory $lib.
+
+=item 4. Get $main_module_version by Module::Metadata->new_from_module($main_module, inc => [$lib, "$lib/$Config{archname}"])->version
+
+=item 5. Find install.json that has "name" eq $main_module, and provides $main_module with version $main_module_version
+
+=item 6. Get .meta directory and MYMETA.json with install.json.
 
 =back
 
