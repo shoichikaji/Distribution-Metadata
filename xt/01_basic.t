@@ -31,24 +31,23 @@ subtest basic => sub {
         is_deeply $info1->$method, $info2->$method;
     }
 
-    my %files;
-    find sub { $files{$File::Find::name} = 0 if -f $_ }, $tempdir;
-
-    for my $file (@{ $info1->files }) {
-        if (exists $files{ $file }) {
-            $files{ $file }++;
-        }
-    }
-    my @not_listed_in_packlist = grep { $files{$_} == 0 } sort keys %files;
-    my @known = qw(MYMETA.json install.json .packlist perllocal.pod);
-
-    for my $file (@not_listed_in_packlist) {
-        my $basename = basename $file;
-        if (0 == grep { $basename eq $_ } @known) {
-            fail "Unexpected file '$file'";
-        }
-    }
-
+    # my %files;
+    # find sub { $files{$File::Find::name} = 0 if -f $_ }, $tempdir;
+    #
+    # for my $file (@{ $info1->files }) {
+    #     if (exists $files{ $file }) {
+    #         $files{ $file }++;
+    #     }
+    # }
+    # my @not_listed_in_packlist = grep { $files{$_} == 0 } sort keys %files;
+    # my @known = qw(MYMETA.json install.json .packlist perllocal.pod);
+    #
+    # for my $file (@not_listed_in_packlist) {
+    #     my $basename = basename $file;
+    #     if (0 == grep { $basename eq $_ } @known) {
+    #         fail "Unexpected file '$file'";
+    #     }
+    # }
 };
 
 subtest prefer => sub {
