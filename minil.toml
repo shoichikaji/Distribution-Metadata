@@ -1,6 +1,4 @@
 name = "Distribution-Metadata"
-# badges = ["travis"]
-authority="cpan:SKAJI"
-
-module_maker="ModuleBuildTiny"
-
+badges = ["travis"]
+authority = "cpan:SKAJI"
+module_maker = "ModuleBuildTiny"

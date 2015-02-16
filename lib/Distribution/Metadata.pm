@@ -5,74 +5,98 @@ use warnings;
 use CPAN::Meta;
 use Config;
 use ExtUtils::Packlist;
-use File::Basename 'basename';
+use File::Basename qw(basename dirname);
 use File::Find 'find';
 use JSON::PP ();
 use Module::Metadata;
+use File::Spec;
 
 our $VERSION = "0.01";
-
-sub packlist { shift->{packlist} }
-sub meta_directory { shift->{meta_directory} }
-sub install_json { shift->{install_json} }
-sub mymeta { shift->{mymeta} }
 
 sub new_from_module {
     my ($class, $module, %option) = @_;
     my $inc = $option{inc} || \@INC;
-    my $module_metadata = Module::Metadata->new_from_module($module, inc => $inc)
-        or return;
-    $class->new_from_file($module_metadata->filename, inc => $inc);
+    my $metadata = Module::Metadata->new_from_module($module, inc => $inc);
+    if ($metadata) {
+        $class->new_from_file($metadata->filename, inc => $inc);
+    } else {
+        bless {}, $class;
+    }
 }
 
 sub new_from_file {
     my ($class, $file, %option) = @_;
     my $inc = $option{inc} || \@INC;
-    my $packlist = $class->_find_packlist($file, $inc)
-        or return;
-    my $self = bless {
-        files => undef,
-        install_json => undef,
-        install_json_hash => undef,
-        meta_directory => undef,
-        mymeta => undef,
-        mymeta_hash => undef,
-        packlist => $packlist,
-    }, $class;
+    my $self = bless {}, $class;
 
-    my ($lib, $main_module);
-    if ($packlist =~ m{^(.+)/$Config{archname}/auto/(.+)/.packlist$}) {
-        $lib = $1;
-        $main_module = join "::", split m{/}, $2;
-    } elsif ($packlist =~ m{^(.+)/$Config{archname}/.packlist$}) {
-        # core module
-        return $self;
+
+    my $packlist = $class->_find_packlist($file, $inc);
+    if ($packlist) {
+        $self->{packlist} = $packlist;
     } else {
-        die "Unexpected";
+        return $self;
     }
 
+    my ($main_module, $lib) = $self->_guess_main_module($packlist);
+    if ($main_module) {
+        $self->{main_module} = $main_module;
+        if ($main_module eq "perl") {
+            $self->{main_module_version} = $^V;
+            return $self;
+        }
+    } else {
+        return $self;
+    }
+
+    my $archlib = File::Spec->catdir($lib, $Config{archname});
     my $metadata = Module::Metadata->new_from_module(
-        $main_module, inc => [$lib, "$lib/$Config{archname}"]
-    ) or die "Cannot find '$main_module' in $lib";
+        $main_module, inc => [$lib, $archlib]
+    );
+    return $self unless $metadata;
+
+    $self->{main_module_version} = $metadata->version;
 
     my ($meta_directory, $install_json, $mymeta)
-        = $class->_find_meta($metadata->name, $metadata->version, "$lib/$Config{archname}");
+        = $class->_find_meta($metadata->name, $metadata->version, $archlib);
     $self->{meta_directory} = $meta_directory;
     $self->{install_json} = $install_json;
     $self->{mymeta} = $mymeta;
     $self;
 }
 
+sub _guess_main_module {
+    my ($self, $packlist) = @_;
+    my @piece = File::Spec->splitdir( dirname($packlist) );
+    return "perl" if $piece[-1] eq $Config{archname};
+
+    my (@module, @lib);
+    for my $i ( 1 .. ($#piece-2) ) {
+        if ($piece[$i] eq $Config{archname} && $piece[$i+1] eq "auto") {
+            @module = @piece[ ($i+2) .. $#piece ];
+            @lib    = @piece[ 0      .. ($i-1)  ];
+            last;
+        }
+    }
+    return unless @module;
+    return (join("::", @module), File::Spec->catdir(@lib));
+}
+
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
     my ($meta_directory, $install_json, $mymeta);
-    my $json = JSON::PP->new;
+    my $json = JSON::PP->new->utf8(1);
     find {
         wanted => sub {
             return if $meta_directory;
             return unless -f $_ && basename($_) eq "install.json";
             my $content = do { open my $fh, "<", $_ or return; local $/; <$fh> };
-            my $provides = eval { $json->decode($content)->{provides} } or return;
+            my $hash = eval { $json->decode($content) } || +{};
+
+            # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
+            # So name is main_module!
+            my $name = $hash->{name} || "";
+            return if $name ne $module;
+            my $provides = $hash->{provides} || +{};
             for my $provide ( sort keys %$provides) {
                 if ($provide eq $module
                     && ($provides->{$provide}{version} || "") eq $version) {
@@ -112,6 +136,13 @@ sub _find_packlist {
     return $packlist;
 }
 
+sub packlist { shift->{packlist} }
+sub meta_directory { shift->{meta_directory} }
+sub install_json { shift->{install_json} }
+sub mymeta { shift->{mymeta} }
+sub main_module { shift->{main_module} }
+sub main_module_version { shift->{main_module_version} }
+
 sub files {
     my $self = shift;
     return unless my $packlist = $self->packlist;
@@ -139,15 +170,11 @@ sub mymeta_hash {
     $self->{mymeta_hash} ||= CPAN::Meta->load_file($mymeta)->as_struct;
 }
 
-sub version {
-    my $self = shift;
-    ( $self->install_json_hash || +{} )->{version};
-}
-
-
 1;
 
 __END__
+
+=for stopwords .packlist inc
 
 =encoding utf-8
 
@@ -161,6 +188,8 @@ Distribution::Metadata - gather distribution metadata
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
 
+    print $info->main_module;
+    # LWP
     print $info->packlist;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/auto/LWP/.packlist
     print $info->meta_directory;
@@ -172,16 +201,112 @@ Distribution::Metadata - gather distribution metadata
 
     print "$_\n" for @{ $info->files };
     # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-download
-    # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-dump
-    # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-mirror
-    # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-request
+    # ...
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP/Authen/Basic.pm
     # ...
 
+    my $install_json_hash = $info->install_json_hash;
+    my $mymeta_hash = $info->mymeta_hash;
+
 =head1 DESCRIPTION
 
-Distribution::Metadata gathers distribution metadata.
+Distribution::Metadata gathers distribution metadata in local.
+That is, this module tries to gather
+
+=over 4
+
+=item .packlist file
+
+=item .meta directory
+
+=item install.json file
+
+=item MYMETA.json (or MYMETA.yml) file
+
+=back
+
+=head2 CONSTRUCTORS
+
+=over 4
+
+=item $info = $class->new_from_module($module, inc => \@dirs)
+
+Create Distribution::Metadata instance from module name.
+You can append C<inc> argument
+to specify module/packlist/meta search paths. Default is C<\@INC>.
+
+Please note that, even if the module cannot be found,
+C<new_from_module> returns a Distribution::Metadata instance.
+However almost all methods returns C<undef> for such objects.
+
+=item $info = $class->new_from_file($file, inc => \@dirs)
+
+Create Distribution::Metadata instance from file path.
+You can append C<inc> argument too.
+
+Also C<new_from_file> retunes a Distribution::Metadata instance,
+even if file cannot be found.
+
+=back
+
+=head2 METHODS
+
+=over 4
+
+=item my $file = $info->packlist
+
+C<.packlist> file path
+
+=item my $dir = $info->meta_directory
+
+C<.meta> directory path
+
+=item my $file = $info->mymeta
+
+C<MYMETA.json> (or C<MYMETA.yml>) file path
+
+=item my $main_module = $info->main_module
+
+main module name
+
+=item my $version = $info->main_module_version
+
+main module version
+
+=item my $files = $info->files
+
+file paths which is listed in C<.packlist> file
+
+=item my $hash = $info->install_json_hash
+
+a hash reference for C<install.json>
+
+    my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
+    my $install = $info->install_json_hash;
+    $install->{version};  # 6.08
+    $install->{dist};     # libwww-perl-6.08
+    $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
+    ...
+
+=item my $hash = $info->mymeta_hash
+
+a hash reference for C<MYMETA.json> (or C<MYMETA.yml>)
+
+    my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
+    my $meta = $info->mymeta_hash;
+    $meta->{version};  # 6.08
+    $meta->{abstract}; # The World-Wide Web library for Perl
+    $meta->{prereqs};  # prereq hash
+    ...
+
+=back
+
+=head1 SEE ALSO
+
+L<Module::Metadata>
+
+L<App::capnminus>
 
 =head1 LICENSE
 
