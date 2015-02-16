@@ -119,7 +119,7 @@ That is, this module tries to gather
 
 [Module::Metadata](https://metacpan.org/pod/Module::Metadata)
 
-[App::capnminus](https://metacpan.org/pod/App::capnminus)
+[App::cpanminus](https://metacpan.org/pod/App::cpanminus)
 
 # LICENSE
 

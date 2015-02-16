@@ -317,7 +317,7 @@ a hash reference for C<MYMETA.json> (or C<MYMETA.yml>)
 
 L<Module::Metadata>
 
-L<App::capnminus>
+L<App::cpanminus>
 
 =head1 LICENSE
 
