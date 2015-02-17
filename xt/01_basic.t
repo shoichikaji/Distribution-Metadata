@@ -14,7 +14,7 @@ sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
 subtest basic => sub {
     my $tempdir = tempdir CLEANUP => 1;
-    cpanm "-l$tempdir/local", 'Test::TCP@2.07';
+    cpanm "-l$tempdir/local", 'TOKUHIROM/Test-TCP-2.07.tar.gz';
     my $info1 = Distribution::Metadata->new_from_module(
         "Test::TCP",
         inc => ["$tempdir/local/lib/perl5"],
@@ -55,8 +55,8 @@ subtest basic => sub {
 
 subtest prefer => sub {
     my $tempdir = tempdir CLEANUP => 1;
-    cpanm "-l$tempdir/local2.07", 'Test::TCP@2.07';
-    cpanm "-l$tempdir/local2.06", 'Test::TCP@2.06';
+    cpanm "-l$tempdir/local2.07", 'TOKUHIROM/Test-TCP-2.07.tar.gz';
+    cpanm "-l$tempdir/local2.06", 'TOKUHIROM/Test-TCP-2.06.tar.gz';
     my $info = Distribution::Metadata->new_from_module(
         "Test::TCP",
         inc => [
@@ -70,7 +70,7 @@ subtest prefer => sub {
 
 subtest abs_path => sub {
     my $tempdir = tempd;
-    cpanm "-llocal", 'Test::TCP@2.07';
+    cpanm "-llocal", 'TOKUHIROM/Test-TCP-2.07.tar.gz';
     my $info = Distribution::Metadata->new_from_module(
         "Test::TCP",
         inc => [
@@ -86,7 +86,7 @@ subtest abs_path => sub {
 
 subtest archlib => sub {
     my $tempdir = tempdir CLEANUP => 1;
-    cpanm "-l$tempdir/local", 'common::sense';
+    cpanm "-l$tempdir/local", 'MLEHMANN/common-sense-3.73.tar.gz';
     my $info1 = Distribution::Metadata->new_from_module(
         "common::sense",
         inc => ["$tempdir/local/lib/perl5"],
