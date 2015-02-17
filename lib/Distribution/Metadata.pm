@@ -18,6 +18,9 @@ sub new_from_module {
     my ($class, $module, %option) = @_;
     my $inc = $option{inc} || \@INC;
     $inc = $class->_abs_path($inc);
+    unless ( exists $option{fill_archlib} && !$option{fill_archlib} ) {
+        $inc = $class->_fill_archlib($inc);
+    }
     my $metadata = Module::Metadata->new_from_module($module, inc => $inc);
     if ($metadata) {
         $class->new_from_file($metadata->filename, inc => $inc);
@@ -30,6 +33,9 @@ sub new_from_file {
     my ($class, $file, %option) = @_;
     my $inc = $option{inc} || \@INC;
     $inc = $class->_abs_path($inc);
+    unless ( exists $option{fill_archlib} && !$option{fill_archlib} ) {
+        $inc = $class->_fill_archlib($inc);
+    }
     my $self = bless {}, $class;
 
 
@@ -84,6 +90,21 @@ sub _guess_main_module {
     }
     return unless @module;
     return (join("::", @module), File::Spec->catdir(@lib));
+}
+
+sub _fill_archlib {
+    my ($class, $incs) = @_;
+    my %incs = map { $_ => 1 } @$incs;
+    my @out;
+    for my $inc (@$incs) {
+        push @out, $inc;
+        next if $inc =~ /$Config{archname}$/;
+        my $archlib = File::Spec->catdir($inc, $Config{archname});
+        if (-d $archlib && !$incs{$archlib}) {
+            push @out, $archlib;
+        }
+    }
+    \@out;
 }
 
 sub _find_meta {
@@ -274,20 +295,22 @@ Let me explain how C<< $class->new_from_module($module, inc => $inc) >> works.
 
 =over 4
 
-=item C<< my $info = $class->new_from_module($module, inc => \@dirs) >>
+=item C<< my $info = $class->new_from_module($module, inc => \@dirs, fill_archlib => $bool) >>
 
 Create Distribution::Metadata instance from module name.
 You can append C<inc> argument
 to specify module/packlist/meta search paths. Default is C<\@INC>.
+If the inc directories do not contain archlibs, then they are automatically added.
+You can turn off this behavior by setting C<< fill_archlib => undef >>.
 
 Please note that, even if the module cannot be found,
 C<new_from_module> returns a Distribution::Metadata instance.
 However almost all methods returns C<undef> for such objects.
 
-=item C<< my $info = $class->new_from_file($file, inc => \@dirs) >>
+=item C<< my $info = $class->new_from_file($file, inc => \@dirs, fill_archlib => $bool) >>
 
 Create Distribution::Metadata instance from file path.
-You can append C<inc> argument too.
+You can append C<inc> and C<fill_archlib> arguments too.
 
 Also C<new_from_file> retunes a Distribution::Metadata instance,
 even if file cannot be found.

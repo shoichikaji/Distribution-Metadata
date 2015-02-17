@@ -11,16 +11,17 @@ use File::pushd 'tempd';
 use File::Spec;
 sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
+
 subtest basic => sub {
     my $tempdir = tempdir CLEANUP => 1;
     cpanm "-l$tempdir/local", 'Test::TCP@2.07';
     my $info1 = Distribution::Metadata->new_from_module(
         "Test::TCP",
-        inc => ["$tempdir/local/lib/perl5", "$tempdir/local/lib/perl5/$Config{archname}"],
+        inc => ["$tempdir/local/lib/perl5"],
     );
     my $info2 = Distribution::Metadata->new_from_module(
         "Net::EmptyPort",
-        inc => ["$tempdir/local/lib/perl5", "$tempdir/local/lib/perl5/$Config{archname}"],
+        inc => ["$tempdir/local/lib/perl5"],
     );
 
     for my $method (qw(packlist meta_directory install_json mymeta
@@ -60,9 +61,7 @@ subtest prefer => sub {
         "Test::TCP",
         inc => [
             "$tempdir/local2.06/lib/perl5",
-            "$tempdir/local2.06/lib/perl5/$Config{archname}",
             "$tempdir/local2.07/lib/perl5",
-            "$tempdir/local2.07/lib/perl5/$Config{archname}",
         ],
     );
     like $info->$_, qr/2\.06/ for qw(install_json mymeta meta_directory);
@@ -76,7 +75,6 @@ subtest abs_path => sub {
         "Test::TCP",
         inc => [
             "local/lib/perl5",
-            "local/lib/perl5/$Config{archname}",
         ],
     );
 
@@ -84,6 +82,40 @@ subtest abs_path => sub {
         my $is_abs = File::Spec->file_name_is_absolute($info->$method);
         ok $is_abs;
     }
+};
+
+subtest archlib => sub {
+    my $tempdir = tempdir CLEANUP => 1;
+    cpanm "-l$tempdir/local", 'common::sense';
+    my $info1 = Distribution::Metadata->new_from_module(
+        "common::sense",
+        inc => ["$tempdir/local/lib/perl5"],
+        fill_archlib => 0,
+    );
+    is $info1->packlist, undef;
+
+    my $info2 = Distribution::Metadata->new_from_module(
+        "common::sense",
+        inc => ["$tempdir/local/lib/perl5"],
+    );
+    ok $info2->packlist;
+    ok $info2->meta_directory;
+
+    my $info3 = Distribution::Metadata->new_from_module(
+        "common::sense",
+        inc => ["$tempdir/local/lib/perl5"],
+        fill_archlib => 1,
+    );
+    ok $info3->packlist;
+    ok $info3->meta_directory;
+
+    my $info4 = Distribution::Metadata->new_from_module(
+        "common::sense",
+        inc => ["$tempdir/local/lib/perl5/$Config{archname}"],
+        fill_archlib => 0,
+    );
+    ok $info3->packlist;
+    ok $info3->meta_directory;
 };
 
 
