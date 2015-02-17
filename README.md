@@ -62,20 +62,22 @@ Let me explain how `$class->new_from_module($module, inc => $inc)` works.
 
 ## CONSTRUCTORS
 
-- `my $info = $class->new_from_module($module, inc => \@dirs)`
+- `my $info = $class->new_from_module($module, inc => \@dirs, fill_archlib => $bool)`
 
     Create Distribution::Metadata instance from module name.
     You can append `inc` argument
     to specify module/packlist/meta search paths. Default is `\@INC`.
+    If the inc directories do not contain archlibs, then they are automatically added.
+    You can turn off this behavior by setting `fill_archlib => undef`.
 
     Please note that, even if the module cannot be found,
     `new_from_module` returns a Distribution::Metadata instance.
     However almost all methods returns `undef` for such objects.
 
-- `my $info = $class->new_from_file($file, inc => \@dirs)`
+- `my $info = $class->new_from_file($file, inc => \@dirs, fill_archlib => $bool)`
 
     Create Distribution::Metadata instance from file path.
-    You can append `inc` argument too.
+    You can append `inc` and `fill_archlib` arguments too.
 
     Also `new_from_file` retunes a Distribution::Metadata instance,
     even if file cannot be found.
