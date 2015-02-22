@@ -116,7 +116,7 @@ sub _find_meta {
             return if $meta_directory;
             return unless -f $_ && basename($_) eq "install.json";
             my $content = do { open my $fh, "<:utf8", $_ or return; local $/; <$fh> };
-            my $hash = eval { $json->decode($content) } || +{};
+            my $hash = $json->decode($content);
 
             # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
             # So name is main_module!
@@ -165,8 +165,8 @@ sub _find_packlist {
 sub _abs_path {
     my ($class, $dirs) = @_;
     my @out;
-    for my $dir (@$dirs) {
-        my $abs = eval { Cwd::abs_path($dir) };
+    for my $dir (grep -d, @$dirs) {
+        my $abs = Cwd::abs_path($dir);
         push @out, $abs if $abs;
     }
     \@out;
@@ -197,7 +197,7 @@ sub install_json_hash {
             open my $fh, "<:utf8", $install_json or die "$install_json: $!";
             local $/; <$fh>;
         };
-        eval { JSON::PP->new->decode($content) };
+        JSON::PP->new->decode($content);
     };
 }
 
