@@ -346,6 +346,10 @@ C<.packlist> file path
 
 C<.meta> directory path
 
+=item C<< my $file = $info->install_json >>
+
+C<install.json> file path
+
 =item C<< my $file = $info->mymeta_json >>
 
 C<MYMETA.json> file path

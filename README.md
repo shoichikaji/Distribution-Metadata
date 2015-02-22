@@ -110,6 +110,10 @@ when appropriate modules or files cannot be found.
 
     `.meta` directory path
 
+- `my $file = $info->install_json`
+
+    `install.json` file path
+
 - `my $file = $info->mymeta_json`
 
     `MYMETA.json` file path
