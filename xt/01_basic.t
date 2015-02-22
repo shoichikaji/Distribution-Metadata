@@ -11,7 +11,6 @@ use File::pushd 'tempd';
 use File::Spec;
 sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
-
 subtest basic => sub {
     my $tempdir = tempdir CLEANUP => 1;
     cpanm "-l$tempdir/local", 'TOKUHIROM/Test-TCP-2.07.tar.gz';
@@ -33,24 +32,6 @@ subtest basic => sub {
         ok $info1->$method;
         is_deeply $info1->$method, $info2->$method;
     }
-
-    # my %files;
-    # find sub { $files{$File::Find::name} = 0 if -f $_ }, $tempdir;
-    #
-    # for my $file (@{ $info1->files }) {
-    #     if (exists $files{ $file }) {
-    #         $files{ $file }++;
-    #     }
-    # }
-    # my @not_listed_in_packlist = grep { $files{$_} == 0 } sort keys %files;
-    # my @known = qw(MYMETA.json install.json .packlist perllocal.pod);
-    #
-    # for my $file (@not_listed_in_packlist) {
-    #     my $basename = basename $file;
-    #     if (0 == grep { $basename eq $_ } @known) {
-    #         fail "Unexpected file '$file'";
-    #     }
-    # }
 };
 
 subtest prefer => sub {
@@ -116,7 +97,5 @@ subtest archlib => sub {
     ok $info3->packlist;
     ok $info3->meta_directory;
 };
-
-
 
 done_testing;

@@ -38,7 +38,6 @@ sub new_from_file {
     }
     my $self = bless {}, $class;
 
-
     my $packlist = $class->_find_packlist($file, $inc);
     if ($packlist) {
         $self->{packlist} = $packlist;
