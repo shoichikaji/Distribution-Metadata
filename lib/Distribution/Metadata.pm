@@ -51,7 +51,7 @@ sub new_from_file {
         $self->{main_module} = $main_module;
         if ($main_module eq "perl") {
             $self->{main_module_version} = $^V;
-            $self->{main_module_path} = $^X;
+            $self->{main_module_file} = $^X;
             return $self;
         }
     } else {
@@ -65,7 +65,7 @@ sub new_from_file {
     return $self unless $metadata;
 
     $self->{main_module_version} = $metadata->version;
-    $self->{main_module_path} = $metadata->filename;
+    $self->{main_module_file} = $metadata->filename;
 
     my ($meta_directory, $install_json, $mymeta_json)
         = $class->_find_meta($metadata->name, $metadata->version, $archlib);
@@ -142,16 +142,16 @@ sub _find_meta {
 }
 
 sub _find_packlist {
-    my ($class, $module_path, $inc) = @_;
+    my ($class, $module_file, $inc) = @_;
 
     my $packlist;
     find {
         wanted => sub {
             return if $packlist;
             return unless -f $_ && basename($_) eq ".packlist";
-            my @paths = sort keys %{ ExtUtils::Packlist->new($_) || +{} };
-            for my $path (@paths) {
-                if ($path eq $module_path) {
+            my @files = sort keys %{ ExtUtils::Packlist->new($_) || +{} };
+            for my $file (@files) {
+                if ($file eq $module_file) {
                     $packlist = $_;
                     return;
                 }
@@ -178,7 +178,7 @@ sub install_json { shift->{install_json} }
 sub mymeta_json { shift->{mymeta_json} }
 sub main_module { shift->{main_module} }
 sub main_module_version { shift->{main_module_version} }
-sub main_module_path { shift->{main_module_path} }
+sub main_module_file { shift->{main_module_file} }
 
 sub files {
     my $self = shift;
@@ -227,7 +227,7 @@ Distribution::Metadata - gather distribution metadata
 
     print $info->main_module;         # LWP
     print $info->main_module_version; # 6.08
-    print $info->main_module_path;    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
+    print $info->main_module_file;    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
 
     print $info->packlist;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/auto/LWP/.packlist
@@ -255,7 +255,7 @@ That is, this module tries to gather
 
 =over 4
 
-=item main module name, version, path
+=item main module name, version, file
 
 =item C<.packlist> file
 
@@ -359,9 +359,9 @@ main module name
 
 main module version
 
-=item C<< my $path = $info->main_module_path >>
+=item C<< my $file = $info->main_module_file >>
 
-main module path
+main module file path
 
 =item C<< my $files = $info->files >>
 
