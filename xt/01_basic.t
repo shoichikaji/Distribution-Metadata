@@ -98,8 +98,7 @@ subtest archlib => sub {
         "common::sense",
         inc => ["$tempdir/local/lib/perl5"],
     );
-    ok $info2->packlist;
-    ok $info2->meta_directory;
+    is $info2->packlist, undef;
 
     my $info3 = Distribution::Metadata->new_from_module(
         "common::sense",
