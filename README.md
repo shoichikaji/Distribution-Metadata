@@ -19,7 +19,7 @@ Distribution::Metadata - gather distribution metadata
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08
     print $info->install_json;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/install.json
-    print $info->mymeta;
+    print $info->mymeta_json;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/MYMETA.json
 
     print $_, "\n" for @{ $info->files };
@@ -30,7 +30,7 @@ Distribution::Metadata - gather distribution metadata
     # ...
 
     my $install_json_hash = $info->install_json_hash;
-    my $mymeta_hash = $info->mymeta_hash;
+    my $mymeta_json_hash = $info->mymeta_json_hash;
 
 # DESCRIPTION
 
@@ -41,7 +41,11 @@ That is, this module tries to gather
 - `.packlist` file
 - `.meta` directory
 - `install.json` file
-- `MYMETA.json` (or `MYMETA.yml`) file
+- `MYMETA.json` file
+
+Note that `.meta` directory, `install.json` file and `MYMETA.json` file
+seem to be available when you installed modules
+with [cpanm](https://metacpan.org/pod/cpanm) 1.5000 (released 2011.10.13) or later.
 
 # HOW IT WORKS
 
@@ -95,6 +99,9 @@ Let me explain how `$class->new_from_module($module, inc => $inc)` works.
 
 ## METHODS
 
+Please note that the following methods return `undef`
+when appropriate modules or files cannot be found.
+
 - `my $file = $info->packlist`
 
     `.packlist` file path
@@ -103,9 +110,9 @@ Let me explain how `$class->new_from_module($module, inc => $inc)` works.
 
     `.meta` directory path
 
-- `my $file = $info->mymeta`
+- `my $file = $info->mymeta_json`
 
-    `MYMETA.json` (or `MYMETA.yml`) file path
+    `MYMETA.json` file path
 
 - `my $main_module = $info->main_module`
 
@@ -134,9 +141,9 @@ Let me explain how `$class->new_from_module($module, inc => $inc)` works.
         $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
         ...
 
-- `my $hash = $info->mymeta_hash`
+- `my $hash = $info->mymeta_json_hash`
 
-    a hash reference for `MYMETA.json` (or `MYMETA.yml`)
+    a hash reference for `MYMETA.json`
 
         my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
         my $meta = $info->mymeta_hash;

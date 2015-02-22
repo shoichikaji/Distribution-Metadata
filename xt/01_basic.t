@@ -24,12 +24,12 @@ subtest basic => sub {
         inc => ["$tempdir/local/lib/perl5"],
     );
 
-    for my $method (qw(packlist meta_directory install_json mymeta
+    for my $method (qw(packlist meta_directory install_json mymeta_json
         main_module main_module_version)) {
         ok $info1->$method;
         is $info1->$method, $info2->$method;
     }
-    for my $method (qw(install_json_hash mymeta_hash files)) {
+    for my $method (qw(install_json_hash mymeta_json_hash files)) {
         ok $info1->$method;
         is_deeply $info1->$method, $info2->$method;
     }
@@ -64,7 +64,7 @@ subtest prefer => sub {
             "$tempdir/local2.07/lib/perl5",
         ],
     );
-    like $info->$_, qr/2\.06/ for qw(install_json mymeta meta_directory);
+    like $info->$_, qr/2\.06/ for qw(install_json mymeta_json meta_directory);
     is $info->install_json_hash->{version}, '2.06';
 };
 
@@ -78,7 +78,7 @@ subtest abs_path => sub {
         ],
     );
 
-    for my $method (qw(packlist mymeta install_json)) {
+    for my $method (qw(packlist mymeta_json install_json)) {
         my $is_abs = File::Spec->file_name_is_absolute($info->$method);
         ok $is_abs;
     }

@@ -67,11 +67,11 @@ sub new_from_file {
     $self->{main_module_version} = $metadata->version;
     $self->{main_module_path} = $metadata->filename;
 
-    my ($meta_directory, $install_json, $mymeta)
+    my ($meta_directory, $install_json, $mymeta_json)
         = $class->_find_meta($metadata->name, $metadata->version, $archlib);
     $self->{meta_directory} = $meta_directory;
     $self->{install_json} = $install_json;
-    $self->{mymeta} = $mymeta;
+    $self->{mymeta_json} = $mymeta_json;
     $self;
 }
 
@@ -109,7 +109,7 @@ sub _fill_archlib {
 
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
-    my ($meta_directory, $install_json, $mymeta);
+    my ($meta_directory, $install_json, $mymeta_json);
     my $json = JSON::PP->new;
     find {
         wanted => sub {
@@ -136,9 +136,9 @@ sub _find_meta {
 
     if ($meta_directory) {
         $install_json = "$meta_directory/install.json";
-        ($mymeta) = grep -f, map { "$meta_directory/MYMETA.$_" } qw(json yml);
+        ($mymeta_json) = grep -f, "$meta_directory/MYMETA.json";
     };
-    return ($meta_directory, $install_json, $mymeta);
+    return ($meta_directory, $install_json, $mymeta_json);
 }
 
 sub _find_packlist {
@@ -175,7 +175,7 @@ sub _abs_path {
 sub packlist { shift->{packlist} }
 sub meta_directory { shift->{meta_directory} }
 sub install_json { shift->{install_json} }
-sub mymeta { shift->{mymeta} }
+sub mymeta_json { shift->{mymeta_json} }
 sub main_module { shift->{main_module} }
 sub main_module_version { shift->{main_module_version} }
 sub main_module_path { shift->{main_module_path} }
@@ -201,10 +201,10 @@ sub install_json_hash {
     };
 }
 
-sub mymeta_hash {
+sub mymeta_json_hash {
     my $self = shift;
-    return unless my $mymeta = $self->mymeta;
-    $self->{mymeta_hash} ||= CPAN::Meta->load_file($mymeta)->as_struct;
+    return unless my $mymeta_json = $self->mymeta_json;
+    $self->{mymeta_json_hash} ||= CPAN::Meta->load_file($mymeta_json)->as_struct;
 }
 
 1;
@@ -235,7 +235,7 @@ Distribution::Metadata - gather distribution metadata
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08
     print $info->install_json;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/install.json
-    print $info->mymeta;
+    print $info->mymeta_json;
     # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/MYMETA.json
 
     print $_, "\n" for @{ $info->files };
@@ -246,7 +246,7 @@ Distribution::Metadata - gather distribution metadata
     # ...
 
     my $install_json_hash = $info->install_json_hash;
-    my $mymeta_hash = $info->mymeta_hash;
+    my $mymeta_json_hash = $info->mymeta_json_hash;
 
 =head1 DESCRIPTION
 
@@ -263,9 +263,13 @@ That is, this module tries to gather
 
 =item C<install.json> file
 
-=item C<MYMETA.json> (or C<MYMETA.yml>) file
+=item C<MYMETA.json> file
 
 =back
+
+Note that C<.meta> directory, C<install.json> file and C<MYMETA.json> file
+seem to be available when you installed modules
+with L<cpanm> 1.5000 (released 2011.10.13) or later.
 
 =head1 HOW IT WORKS
 
@@ -330,6 +334,9 @@ even if file cannot be found.
 
 =head2 METHODS
 
+Please note that the following methods return C<undef>
+when appropriate modules or files cannot be found.
+
 =over 4
 
 =item C<< my $file = $info->packlist >>
@@ -340,9 +347,9 @@ C<.packlist> file path
 
 C<.meta> directory path
 
-=item C<< my $file = $info->mymeta >>
+=item C<< my $file = $info->mymeta_json >>
 
-C<MYMETA.json> (or C<MYMETA.yml>) file path
+C<MYMETA.json> file path
 
 =item C<< my $main_module = $info->main_module >>
 
@@ -371,9 +378,9 @@ a hash reference for C<install.json>
     $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
     ...
 
-=item C<< my $hash = $info->mymeta_hash >>
+=item C<< my $hash = $info->mymeta_json_hash >>
 
-a hash reference for C<MYMETA.json> (or C<MYMETA.yml>)
+a hash reference for C<MYMETA.json>
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
     my $meta = $info->mymeta_hash;

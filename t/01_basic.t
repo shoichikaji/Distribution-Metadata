@@ -20,9 +20,9 @@ subtest core_module => sub {
     is $info->main_module_path, $^X;
     is ref($info->files), "ARRAY";
     is $info->meta_directory, undef;
-    is $info->mymeta, undef;
+    is $info->mymeta_json, undef;
     is $info->install_json, undef;
-    is $info->mymeta_hash, undef;
+    is $info->mymeta_json_hash, undef;
     is $info->install_json_hash, undef;
 
     my ($pm_file) = grep /FindBin\.pm$/, @{ $info->files };
