@@ -21,8 +21,15 @@ my $module = shift or pod2usage(1);
 
 my $info = Distribution::Metadata->new_from_module($module);
 die "Cannot find $module\n" unless $info->packlist;
+if ($info->main_module eq "perl") {
+    warn "ooooooooops, you are about to remove perl itself, stop!\n";
+    exit;
+}
 
-my @unlink = (@{ $info->files }, $info->install_json, $info->mymeta, $info->meta_directory);
+my @unlink = grep defined, (
+    @{ $info->files },
+    $info->install_json, $info->mymeta_json, $info->meta_directory
+);
 
 warn "-> $_\n" for @unlink;
 my $answer = prompt("=> Do you want to unlink the above files? (y/N)", "N");
