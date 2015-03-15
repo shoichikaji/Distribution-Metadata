@@ -7,8 +7,6 @@ perl:
   - "5.16"
   - "5.18"
   - "5.20"
-env:
-  - PERL_DISTRIBUTION_METADATA_DEBUG=1
 script:
-  - perl -MExtUtils::Packlist -le 'my $e = "ExtUtils::Packlist"; printf STDERR "-----> %s %s\n", $e, $e->VERSION'
   - prove -l t xt
+
