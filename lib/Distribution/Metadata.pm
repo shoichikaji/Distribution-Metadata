@@ -67,6 +67,10 @@ sub new_from_file {
     if ($main_module) {
         $self->{main_module} = $main_module;
         if ($main_module eq "perl") {
+            if ($CACHE_CORE_DISTRIBUTION && !$CACHE{core_packlist}) {
+                $CACHE{core_packlist} = $packlist;
+                $CACHE{core_files}    = $files;
+            }
             $self->{main_module_version} = $^V;
             $self->{main_module_file} = $^X;
             $self->{dist} = "perl";
@@ -102,10 +106,6 @@ sub _guess_main_module {
     my ($self, $packlist) = @_;
     my @piece = File::Spec->splitdir( dirname($packlist) );
     if ($piece[-1] eq $ARCHNAME) {
-        if ($CACHE_CORE_DISTRIBUTION && !$CACHE{core_files}) {
-            $CACHE{core_packlist} = $packlist;
-            $CACHE{core_files}    = [sort keys %{ ExtUtils::Packlist->new($packlist) }];
-        }
         return ("perl", undef);
     }
 
