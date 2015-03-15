@@ -153,13 +153,18 @@ sub _fill_archlib {
 my $JSON = JSON->new;
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
+    return unless -d $dir;
 
     # to speed up, first try distribution which just $module =~ s/::/-/gr;
     my $naive = do { my $dist = $module; $dist =~ s/::/-/g; $dist };
-    my @install_jsons = (
-        ( sort { $b cmp $a } glob '"' . catfile($dir, "$naive-*", "install.json") . '"' ),
-        ( sort { $b cmp $a } glob '"' . catfile($dir, "*", "install.json") . '"' ),
-    );
+
+    # note: don't use glob(); it deffers depending on perl version
+    my @install_jsons = do {
+        opendir my $dh, $dir or die "opendir $dir: $!";
+        my @e = grep { !/^[.]{1,2}$/ } readdir $dh;
+        my @sort = ( (grep { /^$naive/ } @e), (grep { !/^$naive/ } @e) );
+        grep -f, map { catfile($dir, $_, "install.json") } @sort;
+    };
 
     my ($meta_directory, $install_json, $install_json_hash, $mymeta_json);
     INSTALL_JSON_LOOP:
@@ -200,6 +205,17 @@ sub _naive_packlist {
     return;
 }
 
+# It happens that .packlist files are symlink path.
+# eg: OSX,
+# in .packlist: /var/folders/...
+# but /var/folders/.. is a symlink to /private/var/folders
+sub _extract_files {
+    my ($class, $packlist) = @_;
+    map  { Cwd::abs_path($_) }
+    grep { -f }
+    sort keys %{ ExtUtils::Packlist->new($packlist) || +{} };
+}
+
 sub _find_packlist {
     my ($class, $module_file, $inc) = @_;
 
@@ -212,7 +228,7 @@ sub _find_packlist {
 
     # to speed up, first try packlist which is naively guessed by $module_file
     if (my $naive_packlist = $class->_naive_packlist($module_file, $inc)) {
-        my @files = sort keys %{ ExtUtils::Packlist->new($naive_packlist) || +{} };
+        my @files = $class->_extract_files($naive_packlist);
         if ( grep { $module_file eq $_ } @files ) {
             DEBUG and warn "-> naively found packlist: $module_file\n";
             return ($naive_packlist, \@files);
@@ -227,7 +243,7 @@ sub _find_packlist {
                 return if $packlist;
                 return unless -f $_ && basename($_) eq ".packlist";
                 return if $CACHE_CORE_DISTRIBUTION && ($CACHE{core_packlist} || "") eq $_;
-                my @files = sort keys %{ ExtUtils::Packlist->new($_) || +{} };
+                my @files = $class->_extract_files($_);
                 if ( grep { $module_file eq $_ } @files ) {
                     $packlist = $File::Find::name;
                     $files = \@files;

@@ -25,7 +25,7 @@ subtest basic => sub {
 
     for my $method (qw(packlist meta_directory install_json mymeta_json
         main_module main_module_version)) {
-        ok $info1->$method;
+        ok $info1->$method, "$method ok";
         is $info1->$method, $info2->$method;
     }
     for my $method (qw(install_json_hash mymeta_json_hash files)) {
