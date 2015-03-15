@@ -24,6 +24,9 @@ subtest core_module => sub {
     is $info->install_json, undef;
     is $info->mymeta_json_hash, undef;
     is $info->install_json_hash, undef;
+    is $info->distvname, do { my $v = $^V; $v =~ s/^v//; "perl-$v" };
+    is $info->name, "perl";
+    is $info->version, $^V;
 
     my ($pm_file) = grep /FindBin\.pm$/, @{ $info->files };
     my $new_info = Distribution::Metadata->new_from_file($pm_file);

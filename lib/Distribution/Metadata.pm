@@ -2,6 +2,7 @@ package Distribution::Metadata;
 use 5.008001;
 use strict;
 use warnings;
+use CPAN::DistnameInfo;
 use CPAN::Meta;
 use Config;
 use Cwd ();
@@ -68,6 +69,11 @@ sub new_from_file {
         if ($main_module eq "perl") {
             $self->{main_module_version} = $^V;
             $self->{main_module_file} = $^X;
+            $self->{dist} = "perl";
+            my $version = "" . $^V;
+            $version =~ s/v//;
+            $self->{distvname} = "perl-$version";
+            $self->{version} = $version;
             return $self;
         }
     } else {
@@ -246,6 +252,26 @@ sub mymeta_json_hash {
     return unless my $mymeta_json = $self->mymeta_json;
     $self->{mymeta_json_hash} ||= CPAN::Meta->load_file($mymeta_json)->as_struct;
 }
+
+sub _distnameinfo {
+    my $self = shift;
+    return unless my $hash = $self->install_json_hash;
+    $self->{_distnameinfo} = CPAN::DistnameInfo->new( $hash->{pathname} );
+}
+
+for my $attr (qw(dist version cpanid distvname pathname)) {
+    no strict 'refs';
+    *$attr = sub {
+        my $self = shift;
+        return $self->{$attr} if exists $self->{$attr}; # for 'perl' distribution
+        return unless $self->_distnameinfo;
+        $self->_distnameinfo->$attr;
+    };
+}
+
+# alias
+sub name   { shift->dist }
+sub author { shift->cpanid }
 
 1;
 

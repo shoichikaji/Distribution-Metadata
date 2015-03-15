@@ -42,6 +42,7 @@
       },
       "runtime" : {
          "requires" : {
+            "CPAN::DistnameInfo" : "0",
             "CPAN::Meta" : "0",
             "ExtUtils::Packlist" : "0",
             "JSON" : "0",

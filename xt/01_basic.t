@@ -32,6 +32,12 @@ subtest basic => sub {
         ok $info1->$method;
         is_deeply $info1->$method, $info2->$method;
     }
+
+    is $info1->name, "Test-TCP";
+    is $info1->version, "2.07";
+    is $info1->distvname, "Test-TCP-2.07";
+    is $info1->pathname, 'T/TO/TOKUHIROM/Test-TCP-2.07.tar.gz';
+    is $info1->author, 'TOKUHIROM';
 };
 
 subtest prefer => sub {

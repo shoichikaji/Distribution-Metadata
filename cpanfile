@@ -1,4 +1,5 @@
 requires 'perl', '5.008001';
+requires 'CPAN::DistnameInfo';
 requires 'CPAN::Meta';
 requires 'ExtUtils::Packlist';
 requires 'JSON';
