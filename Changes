@@ -2,6 +2,8 @@ Revision history for Perl extension Distribution-Metadata
 
 {{$NEXT}}
 
+0.02 2015-03-15T19:49:21Z
+
     - document that this module is still in development phase, and API will change without notice
     - speed improvements; cache core packlist, try to search naively guessed packlist and meta directory first
     - add name, version, distvname, author, pathname methods

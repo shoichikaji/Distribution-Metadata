@@ -17,7 +17,7 @@ use constant DEBUG => $ENV{PERL_DISTRIBUTION_METADATA_DEBUG};
 my $SEP = qr{/|\\}; # path separater
 my $ARCHNAME = $Config{archname};
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 my $CACHE_CORE_DISTRIBUTION = 1; # default cache on
 my %CACHE;
