@@ -31,15 +31,13 @@ Distribution::Metadata - gather distribution metadata in local
 
 # DESCRIPTION
 
-**CAUTION**: This module is still in development phase.
-API will change without notice.
-I would really appreciate your feedback.
+(**CAUTION**: This module is still in development phase. API will change without notice.)
 
 Sometimes we want to know:
-"Where this module comes from?", "Which distribution does this module belong to?"
+_Where this module comes from? Which distribution does this module belong to?_
 
 Since [cpanm](https://metacpan.org/pod/cpanm) 1.5000 (released 2011.10.13),
-it installs modules as well as their distribution meta data.
+it installs not only modules but also their meta data.
 So we can answer that questions!
 
 Distribution::Metadata gathers distribution metadata in local.
