@@ -1,5 +1,5 @@
 {
-   "abstract" : "gather distribution metadata",
+   "abstract" : "gather distribution metadata in local",
    "author" : [
       "Shoichi Kaji <skaji@cpan.org>"
    ],
@@ -42,9 +42,10 @@
       },
       "runtime" : {
          "requires" : {
+            "CPAN::DistnameInfo" : "0",
             "CPAN::Meta" : "0",
             "ExtUtils::Packlist" : "0",
-            "JSON::PP" : "0",
+            "JSON" : "0",
             "Module::Metadata" : "0",
             "perl" : "5.008001"
          }

@@ -25,13 +25,19 @@ subtest basic => sub {
 
     for my $method (qw(packlist meta_directory install_json mymeta_json
         main_module main_module_version)) {
-        ok $info1->$method;
+        ok $info1->$method, "$method ok";
         is $info1->$method, $info2->$method;
     }
     for my $method (qw(install_json_hash mymeta_json_hash files)) {
         ok $info1->$method;
         is_deeply $info1->$method, $info2->$method;
     }
+
+    is $info1->name, "Test-TCP";
+    is $info1->version, "2.07";
+    is $info1->distvname, "Test-TCP-2.07";
+    is $info1->pathname, 'T/TO/TOKUHIROM/Test-TCP-2.07.tar.gz';
+    is $info1->author, 'TOKUHIROM';
 };
 
 subtest prefer => sub {
