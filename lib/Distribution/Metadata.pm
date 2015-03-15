@@ -118,7 +118,21 @@ sub _guess_main_module {
         }
     }
     return unless @module;
-    return (join("::", @module), catdir(@lib));
+    return ( _fix_module_name( join("::", @module) ), catdir(@lib) );
+}
+
+# ugly workaround for case insensitive filesystem
+# eg: if you install 'Version::Next' module and later 'version' module,
+# then version's packlist is located at Version/.packlist! (capital V!)
+# Maybe there are a lot of others...
+my @fix_module_name = qw(version Version::Next);
+sub _fix_module_name {
+    my $module_name = shift;
+    if (my ($fix) = grep { $module_name =~ /^$_$/i } @fix_module_name) {
+        $fix;
+    } else {
+        $module_name;
+    }
 }
 
 sub _fill_archlib {
