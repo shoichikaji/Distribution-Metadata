@@ -291,13 +291,13 @@ sub author { shift->cpanid }
 
 __END__
 
-=for stopwords .packlist inc pathname eg archname eq archlibs
+=for stopwords .packlist inc pathname eg archname eq archlibs vname libwww-perl
 
 =encoding utf-8
 
 =head1 NAME
 
-Distribution::Metadata - gather distribution metadata
+Distribution::Metadata - gather distribution metadata in local
 
 =head1 SYNOPSIS
 
@@ -305,51 +305,59 @@ Distribution::Metadata - gather distribution metadata
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
 
+    print $info->name;      # libwww-perl
+    print $info->version;   # 6.13
+    print $info->distvname; # libwww-perl-6.13
+    print $info->author;    # ETHER
+    print $info->pathname;  # E/ET/ETHER/libwww-perl-6.13.tar.gz
+
     print $info->main_module;         # LWP
-    print $info->main_module_version; # 6.08
-    print $info->main_module_file;    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
+    print $info->main_module_version; # 6.13
+    print $info->main_module_file;    # path of LWP.pm
 
-    print $info->packlist;
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/auto/LWP/.packlist
-    print $info->meta_directory;
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08
-    print $info->install_json;
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/install.json
-    print $info->mymeta_json;
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/darwin-2level/.meta/libwww-perl-6.08/MYMETA.json
+    print $info->packlist;       # path of .packlist
+    print $info->meta_directory; # path of .meta directory
+    print $info->install_json;   # path of install.json
+    print $info->mymeta_json;    # path of MYMETA.json
 
-    print $_, "\n" for @{ $info->files };
-    # /Users/skaji/.plenv/versions/5.20.1/bin/lwp-download
-    # ...
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP.pm
-    # /Users/skaji/.plenv/versions/5.20.1/lib/site_perl/5.20.1/LWP/Authen/Basic.pm
-    # ...
+    my $files = $info->files; # files which are listed in .packlist
 
     my $install_json_hash = $info->install_json_hash;
-    my $mymeta_json_hash = $info->mymeta_json_hash;
+    my $mymeta_json_hash  = $info->mymeta_json_hash;
 
 =head1 DESCRIPTION
+
+B<CAUTION>: This module is still in development phase.
+API will change without notice.
+I would really appreciate your feedback.
+
+Sometimes we want to know:
+"Where this module comes from?", "Which distribution does this module belong to?"
+
+Since L<cpanm> 1.5000 (released 2011.10.13),
+it installs modules as well as their distribution meta data.
+So we can answer that questions!
 
 Distribution::Metadata gathers distribution metadata in local.
 That is, this module tries to gather
 
 =over 4
 
-=item main module name, version, file
+=item * main module name, version, file
 
-=item C<.packlist> file
+=item * C<.packlist> file
 
-=item C<.meta> directory
+=item * C<.meta> directory
 
-=item C<install.json> file
+=item * C<install.json> file
 
-=item C<MYMETA.json> file
+=item * C<MYMETA.json> file
 
 =back
 
-Note that C<.meta> directory, C<install.json> file and C<MYMETA.json> file
-seem to be available when you installed modules
-with L<cpanm> 1.5000 (released 2011.10.13) or later.
+Please note that as mentioned above, B<this module deeply depends on cpanm behavior>.
+If you install cpan modules by hands or some cpan clients other than cpanm,
+this module won't work.
 
 =head1 HOW IT WORKS
 
@@ -357,21 +365,21 @@ Let me explain how C<< $class->new_from_module($module, inc => $inc) >> works.
 
 =over 4
 
-=item Get C<$module_file> by
+=item * Get C<$module_file> by
 
     Module::Metadata->new_from_module($module, inc => $inc)->filename.
 
-=item Find C<$packlist> in which C<$module_file> is listed.
+=item * Find C<$packlist> in which C<$module_file> is listed.
 
-=item From C<$packlist> pathname (eg: ...auto/LWP/.packlist), determine C<$main_module> and main module search directory C<$lib>.
+=item * From C<$packlist> pathname (eg: ...auto/LWP/.packlist), determine C<$main_module> and main module search directory C<$lib>.
 
-=item Get C<$main_module_version> by
+=item * Get C<$main_module_version> by
 
     Module::Metadata->new_from_module($main_module, inc => [$lib, "$lib/$Config{archname}"])->version
 
-=item Find install.json that has "name" eq C<$main_module>, and provides C<$main_module> with version C<$main_module_version>.
+=item * Find install.json that has "name" eq C<$main_module>, and provides C<$main_module> with version C<$main_module_version>.
 
-=item Get .meta directory and MYMETA.json with install.json.
+=item * Get .meta directory and MYMETA.json with install.json.
 
 =back
 
@@ -391,7 +399,7 @@ so that archlibs are automatically added to C<inc> if missing.
 
 Please note that, even if the module cannot be found,
 C<new_from_module> returns a Distribution::Metadata instance.
-However almost all methods returns C<undef> for such objects.
+However almost all methods returns false for such objects.
 If you want to know whether the distribution was found or not, try:
 
     my $info = $class->new_from_module($module);
@@ -414,10 +422,30 @@ even if file cannot be found.
 
 =head2 METHODS
 
-Please note that the following methods return C<undef>
+Please note that the following methods return false
 when appropriate modules or files cannot be found.
 
 =over 4
+
+=item C<< my $name = $info->name (alias: $info->dist) >>
+
+distribution name (eg: C<libwww-perl>)
+
+=item C<< my $version = $info->version >>
+
+distribution version (eg: C<6.13>)
+
+=item C<< my $distvname = $info->distvname >>
+
+distribution vname (eg: C<libwww-perl-6.13>)
+
+=item C<< my $author = $info->author (alias: $info->cpanid) >>
+
+distribution author (eg: C<ETHER>)
+
+=item C<< my $pathname = $info->pathname >>
+
+distribution pathname (eg: C<E/ET/ETHER/libwww-perl-6.13.tar.gz>)
 
 =item C<< my $file = $info->packlist >>
 
@@ -457,9 +485,9 @@ a hash reference for C<install.json>
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
     my $install = $info->install_json_hash;
-    $install->{version};  # 6.08
-    $install->{dist};     # libwww-perl-6.08
-    $install->{pathname}; # M/MS/MSCHILLI/libwww-perl-6.08.tar.gz
+    $install->{version};  # 6.13
+    $install->{dist};     # libwww-perl-6.13
+    $install->{provides}; # a hash reference of providing modules
     ...
 
 =item C<< my $hash = $info->mymeta_json_hash >>
@@ -468,7 +496,7 @@ a hash reference for C<MYMETA.json>
 
     my $info = Distribution::Metadata->new_from_module("LWP::UserAgent");
     my $meta = $info->mymeta_hash;
-    $meta->{version};  # 6.08
+    $meta->{version};  # 6.13
     $meta->{abstract}; # The World-Wide Web library for Perl
     $meta->{prereqs};  # prereq hash
     ...
