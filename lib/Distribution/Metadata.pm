@@ -162,7 +162,10 @@ sub _find_meta {
     my @install_jsons = do {
         opendir my $dh, $dir or die "opendir $dir: $!";
         my @e = grep { !/^[.]{1,2}$/ } readdir $dh;
-        my @sort = ( (grep { /^$naive/ } @e), (grep { !/^$naive/ } @e) );
+        my @sort = (
+            (sort { $b cmp $a } grep {  /^$naive/ } @e),
+            (sort { $b cmp $a } grep { !/^$naive/ } @e),
+        );
         grep -f, map { catfile($dir, $_, "install.json") } @sort;
     };
 
