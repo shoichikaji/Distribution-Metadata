@@ -4,15 +4,31 @@ use strict;
 use warnings;
 use CPAN::Meta;
 use Config;
+use Cwd ();
 use ExtUtils::Packlist;
 use File::Basename qw(basename dirname);
 use File::Find 'find';
-use JSON::PP ();
+use File::Spec::Functions qw(catdir catfile);
+use JSON ();
 use Module::Metadata;
-use File::Spec;
-use Cwd ();
+use constant DEBUG => $ENV{PERL_DISTRIBUTION_METADATA_DEBUG};
+
+my $SEP = qr{/|\\}; # path separater
+my $ARCHNAME = $Config{archname};
 
 our $VERSION = "0.01";
+
+my $CACHE_CORE_DISTRIBUTION = 1; # default cache on
+my %CACHE;
+sub cache_core_distribution {
+    my $class = shift;
+    if (@_) {
+        $CACHE_CORE_DISTRIBUTION = $_[0];
+        undef %CACHE unless $_[0];
+    } else {
+        $CACHE_CORE_DISTRIBUTION = 1;
+    }
+}
 
 sub new_from_module {
     my ($class, $module, %option) = @_;
@@ -38,9 +54,10 @@ sub new_from_file {
     }
     my $self = bless {}, $class;
 
-    my $packlist = $class->_find_packlist($file, $inc);
+    my ($packlist, $files) = $class->_find_packlist($file, $inc);
     if ($packlist) {
         $self->{packlist} = $packlist;
+        $self->{files}    = $files;
     } else {
         return $self;
     }
@@ -57,38 +74,45 @@ sub new_from_file {
         return $self;
     }
 
-    my $archlib = File::Spec->catdir($lib, $Config{archname});
+    my $archlib = catdir($lib, $ARCHNAME);
     my $metadata = Module::Metadata->new_from_module(
-        $main_module, inc => [$lib, $archlib]
+        $main_module, inc => [$archlib, $lib]
     );
     return $self unless $metadata;
 
     $self->{main_module_version} = $metadata->version;
     $self->{main_module_file} = $metadata->filename;
 
-    my ($meta_directory, $install_json, $mymeta_json)
-        = $class->_find_meta($metadata->name, $metadata->version, $archlib);
-    $self->{meta_directory} = $meta_directory;
-    $self->{install_json} = $install_json;
-    $self->{mymeta_json} = $mymeta_json;
+    my ($meta_directory, $install_json, $install_json_hash, $mymeta_json)
+        = $class->_find_meta($metadata->name, $metadata->version, catdir($archlib, ".meta"));
+    $self->{meta_directory}    = $meta_directory;
+    $self->{install_json}      = $install_json;
+    $self->{install_json_hash} = $install_json_hash;
+    $self->{mymeta_json}       = $mymeta_json;
     $self;
 }
 
 sub _guess_main_module {
     my ($self, $packlist) = @_;
     my @piece = File::Spec->splitdir( dirname($packlist) );
-    return "perl" if $piece[-1] eq $Config{archname};
+    if ($piece[-1] eq $ARCHNAME) {
+        if ($CACHE_CORE_DISTRIBUTION && !$CACHE{core_files}) {
+            $CACHE{core_packlist} = $packlist;
+            $CACHE{core_files}    = [sort keys %{ ExtUtils::Packlist->new($packlist) }];
+        }
+        return ("perl", undef);
+    }
 
     my (@module, @lib);
     for my $i ( 1 .. ($#piece-2) ) {
-        if ($piece[$i] eq $Config{archname} && $piece[$i+1] eq "auto") {
+        if ($piece[$i] eq $ARCHNAME && $piece[$i+1] eq "auto") {
             @module = @piece[ ($i+2) .. $#piece ];
             @lib    = @piece[ 0      .. ($i-1)  ];
             last;
         }
     }
     return unless @module;
-    return (join("::", @module), File::Spec->catdir(@lib));
+    return (join("::", @module), catdir(@lib));
 }
 
 sub _fill_archlib {
@@ -97,8 +121,8 @@ sub _fill_archlib {
     my @out;
     for my $inc (@$incs) {
         push @out, $inc;
-        next if $inc =~ /$Config{archname}$/;
-        my $archlib = File::Spec->catdir($inc, $Config{archname});
+        next if $inc =~ /$ARCHNAME$/o;
+        my $archlib = catdir($inc, $ARCHNAME);
         if (-d $archlib && !$incs{$archlib}) {
             push @out, $archlib;
         }
@@ -106,59 +130,94 @@ sub _fill_archlib {
     \@out;
 }
 
+my $JSON = JSON->new;
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
-    my ($meta_directory, $install_json, $mymeta_json);
-    my $json = JSON::PP->new;
-    find {
-        wanted => sub {
-            return if $meta_directory;
-            return unless -f $_ && basename($_) eq "install.json";
-            my $content = do { open my $fh, "<:utf8", $_ or return; local $/; <$fh> };
-            my $hash = $json->decode($content);
 
-            # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
-            # So name is main_module!
-            my $name = $hash->{name} || "";
-            return if $name ne $module;
-            my $provides = $hash->{provides} || +{};
-            for my $provide ( sort keys %$provides) {
-                if ($provide eq $module
-                    && ($provides->{$provide}{version} || "") eq $version) {
-                    $meta_directory = $File::Find::dir;
-                    return;
-                }
+    # to speed up, first try distribution which just $module =~ s/::/-/gr;
+    my $naive = do { my $dist = $module; $dist =~ s/::/-/g; $dist };
+    my @install_jsons = (
+        ( sort { $b cmp $a } glob '"' . catfile($dir, "$naive-*", "install.json") . '"' ),
+        ( sort { $b cmp $a } glob '"' . catfile($dir, "*", "install.json") . '"' ),
+    );
+
+    my ($meta_directory, $install_json, $install_json_hash, $mymeta_json);
+    INSTALL_JSON_LOOP:
+    for my $file (@install_jsons) {
+        my $content = do { open my $fh, "<:utf8", $file or next; local $/; <$fh> };
+        my $hash = $JSON->decode($content);
+
+        # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
+        # So name is main_module!
+        my $name = $hash->{name} || "";
+        next if $name ne $module;
+        my $provides = $hash->{provides} || +{};
+        for my $provide (sort keys %$provides) {
+            if ($provide eq $module
+                && ($provides->{$provide}{version} || "") eq $version) {
+                $meta_directory = dirname($file);
+                $install_json = $file;
+                $mymeta_json  = catfile($meta_directory, "MYMETA.json");
+                $install_json_hash = $hash;
+                last INSTALL_JSON_LOOP;
             }
-        },
-        no_chdir => 1,
-    }, $dir;
+        }
+        DEBUG and warn "==> failed to find $module $version in $file\n";
+    }
 
-    if ($meta_directory) {
-        $install_json = "$meta_directory/install.json";
-        ($mymeta_json) = grep -f, "$meta_directory/MYMETA.json";
-    };
-    return ($meta_directory, $install_json, $mymeta_json);
+    return ($meta_directory, $install_json, $install_json_hash, $mymeta_json);
+}
+
+sub _naive_packlist {
+    my ($class, $module_file, $inc) = @_;
+    for my $i (@$inc) {
+        if (my ($path) = $module_file =~ /$i $SEP (.+)\.pm /x) {
+            my $archlib = $i =~ /$ARCHNAME$/o ? $i : catdir($i, $ARCHNAME);
+            my $try = catfile( $archlib, "auto", $path, ".packlist" );
+            return $try if -f $try;
+        }
+    }
+    return;
 }
 
 sub _find_packlist {
     my ($class, $module_file, $inc) = @_;
 
-    my $packlist;
-    find {
-        wanted => sub {
-            return if $packlist;
-            return unless -f $_ && basename($_) eq ".packlist";
-            my @files = sort keys %{ ExtUtils::Packlist->new($_) || +{} };
-            for my $file (@files) {
-                if ($file eq $module_file) {
-                    $packlist = $_;
+    if ($CACHE_CORE_DISTRIBUTION && $CACHE{core_files}) {
+        if ( grep { $_ eq $module_file } @{ $CACHE{core_files} } ) {
+            DEBUG and warn "-> hit cache core packlist: $module_file\n";
+            return ($CACHE{core_packlist}, $CACHE{core_files});
+        }
+    }
+
+    # to speed up, first try packlist which is naively guessed by $module_file
+    if (my $naive_packlist = $class->_naive_packlist($module_file, $inc)) {
+        my @files = sort keys %{ ExtUtils::Packlist->new($naive_packlist) || +{} };
+        if ( grep { $module_file eq $_ } @files ) {
+            DEBUG and warn "-> naively found packlist: $module_file\n";
+            return ($naive_packlist, \@files);
+        }
+    }
+
+    my ($packlist, $files);
+    for my $dir ( grep -d, map {(catdir($_, "auto"), $_)} @{ $class->_fill_archlib($inc) } ) {
+        last if $packlist;
+        find {
+            wanted => sub {
+                return if $packlist;
+                return unless -f $_ && basename($_) eq ".packlist";
+                return if $CACHE_CORE_DISTRIBUTION && ($CACHE{core_packlist} || "") eq $_;
+                my @files = sort keys %{ ExtUtils::Packlist->new($_) || +{} };
+                if ( grep { $module_file eq $_ } @files ) {
+                    $packlist = $File::Find::name;
+                    $files = \@files;
                     return;
                 }
-            }
-        },
-        no_chdir => 1,
-    }, @$inc;
-    return $packlist;
+            },
+            no_chdir => 1,
+        }, $dir;
+    }
+    return ($packlist, $files);
 }
 
 sub _abs_path {
@@ -166,39 +225,21 @@ sub _abs_path {
     my @out;
     for my $dir (grep -d, @$dirs) {
         my $abs = Cwd::abs_path($dir);
+        $abs =~ s/$SEP+$//;
         push @out, $abs if $abs;
     }
     \@out;
 }
 
-sub packlist { shift->{packlist} }
-sub meta_directory { shift->{meta_directory} }
-sub install_json { shift->{install_json} }
-sub mymeta_json { shift->{mymeta_json} }
-sub main_module { shift->{main_module} }
+sub packlist            { shift->{packlist} }
+sub meta_directory      { shift->{meta_directory} }
+sub install_json        { shift->{install_json} }
+sub mymeta_json         { shift->{mymeta_json} }
+sub main_module         { shift->{main_module} }
 sub main_module_version { shift->{main_module_version} }
-sub main_module_file { shift->{main_module_file} }
-
-sub files {
-    my $self = shift;
-    return unless my $packlist = $self->packlist;
-    $self->{files} ||= do {
-        my $hash = ExtUtils::Packlist->new($packlist);
-        [ sort grep { length $_ } keys %$hash ];
-    };
-}
-
-sub install_json_hash {
-    my $self = shift;
-    return unless my $install_json = $self->install_json;
-    $self->{install_json_hash} ||= do {
-        my $content = do {
-            open my $fh, "<:utf8", $install_json or die "$install_json: $!";
-            local $/; <$fh>;
-        };
-        JSON::PP->new->decode($content);
-    };
-}
+sub main_module_file    { shift->{main_module_file} }
+sub files               { shift->{files} }
+sub install_json_hash   { shift->{install_json_hash} }
 
 sub mymeta_json_hash {
     my $self = shift;

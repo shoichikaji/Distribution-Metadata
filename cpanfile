@@ -1,7 +1,7 @@
 requires 'perl', '5.008001';
 requires 'CPAN::Meta';
 requires 'ExtUtils::Packlist';
-requires 'JSON::PP';
+requires 'JSON';
 requires 'Module::Metadata';
 
 on 'test' => sub {
