@@ -19,18 +19,6 @@ my $ARCHNAME = $Config{archname};
 
 our $VERSION = "0.02";
 
-my $CACHE_CORE_DISTRIBUTION = 1; # default cache on
-my %CACHE;
-sub cache_core_distribution {
-    my $class = shift;
-    if (@_) {
-        $CACHE_CORE_DISTRIBUTION = $_[0];
-        undef %CACHE unless $_[0];
-    } else {
-        $CACHE_CORE_DISTRIBUTION = 1;
-    }
-}
-
 sub new_from_module {
     my ($class, $module, %option) = @_;
     my $inc = $option{inc} || \@INC;
@@ -67,10 +55,6 @@ sub new_from_file {
     if ($main_module) {
         $self->{main_module} = $main_module;
         if ($main_module eq "perl") {
-            if ($CACHE_CORE_DISTRIBUTION && !$CACHE{core_packlist}) {
-                $CACHE{core_packlist} = $packlist;
-                $CACHE{core_files}    = $files;
-            }
             $self->{main_module_version} = $^V;
             $self->{main_module_file} = $^X;
             $self->{dist} = "perl";
@@ -222,13 +206,6 @@ sub _extract_files {
 sub _find_packlist {
     my ($class, $module_file, $inc) = @_;
 
-    if ($CACHE_CORE_DISTRIBUTION && $CACHE{core_files}) {
-        if ( grep { $_ eq $module_file } @{ $CACHE{core_files} } ) {
-            DEBUG and warn "-> hit cache core packlist: $module_file\n";
-            return ($CACHE{core_packlist}, $CACHE{core_files});
-        }
-    }
-
     # to speed up, first try packlist which is naively guessed by $module_file
     if (my $naive_packlist = $class->_naive_packlist($module_file, $inc)) {
         my @files = $class->_extract_files($naive_packlist);
@@ -245,7 +222,6 @@ sub _find_packlist {
             wanted => sub {
                 return if $packlist;
                 return unless -f $_ && basename($_) eq ".packlist";
-                return if $CACHE_CORE_DISTRIBUTION && ($CACHE{core_packlist} || "") eq $_;
                 my @files = $class->_extract_files($_);
                 if ( grep { $module_file eq $_ } @files ) {
                     $packlist = $File::Find::name;
