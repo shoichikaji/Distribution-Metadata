@@ -21,31 +21,34 @@ our $VERSION = "0.02";
 
 our $CACHE;
 
-sub new_from_module {
-    my ($class, $module, %option) = @_;
-    my $inc = $option{inc} || \@INC;
-    $inc = $class->_abs_path($inc);
-    if ($option{fill_archlib}) {
-        $inc = $class->_fill_archlib($inc);
-    }
-    my $metadata = Module::Metadata->new_from_module($module, inc => $inc);
-    if ($metadata) {
-        $class->new_from_file($metadata->filename, inc => $inc);
-    } else {
-        bless {}, $class;
-    }
-}
-
 sub new_from_file {
     my ($class, $file, %option) = @_;
+    $class->_new(%option, _module => {file => $file});
+}
+
+sub new_from_module {
+    my ($class, $module, %option) = @_;
+    $class->_new(%option, _module => {name => $module});
+}
+
+sub _new {
+    my ($class, %option) = @_;
+    my $module = $option{_module};
     my $inc = $option{inc} || \@INC;
     $inc = $class->_abs_path($inc);
-    if ($option{fill_archlib}) {
-        $inc = $class->_fill_archlib($inc);
-    }
-    my $self = bless {}, $class;
+    $inc = $class->_fill_archlib($inc) if $option{fill_archlib};
+    my $metadata = $module->{file}
+        ? Module::Metadata->new_from_file($module->{file}, inc => $inc)
+        : Module::Metadata->new_from_module($module->{name}, inc => $inc);
 
-    my ($packlist, $files) = $class->_find_packlist($file, $inc);
+    my $self = bless {}, $class;
+    return $self unless $metadata;
+
+    $module->{file} = $metadata->filename;
+    $module->{name} = $metadata->name;
+    $module->{version} = $metadata->version;
+
+    my ($packlist, $files) = $class->_find_packlist($module->{file}, $inc);
     if ($packlist) {
         $self->{packlist} = $packlist;
         $self->{files}    = $files;
@@ -71,16 +74,25 @@ sub new_from_file {
     }
 
     my $archlib = catdir($lib, $ARCHNAME);
-    my $metadata = Module::Metadata->new_from_module(
+    my $main_metadata = Module::Metadata->new_from_module(
         $main_module, inc => [$archlib, $lib]
     );
-    return $self unless $metadata;
 
-    $self->{main_module_version} = $metadata->version;
-    $self->{main_module_file} = $metadata->filename;
+    my ($find_module, $find_version);
+    if ($main_metadata) {
+        $self->{main_module_version} = $main_metadata->version;
+        $self->{main_module_file} = $main_metadata->filename;
+        $find_module = $main_metadata->name;
+        $find_version = $main_metadata->version;
+    } else {
+        $find_module = $module->{name};
+        $find_version = $module->{version};
+    }
 
-    my ($meta_directory, $install_json, $install_json_hash, $mymeta_json)
-        = $class->_find_meta($metadata->name, $metadata->version, catdir($archlib, ".meta"));
+    my ($meta_directory, $install_json, $install_json_hash, $mymeta_json) = $class->_find_meta(
+        $main_module, $find_module, $find_version,
+        catdir($archlib, ".meta")
+    );
     $self->{meta_directory}    = $meta_directory;
     $self->{install_json}      = $install_json;
     $self->{install_json_hash} = $install_json_hash;
@@ -150,7 +162,7 @@ sub _decode_install_json {
     }
 }
 sub _find_meta {
-    my ($class, $module, $version, $dir) = @_;
+    my ($class, $main_module, $module, $version, $dir) = @_;
     return unless -d $dir;
 
     my @install_json;
@@ -169,7 +181,7 @@ sub _find_meta {
     }
 
     # to speed up, first try distribution which just $module =~ s/::/-/gr;
-    my $naive = do { my $dist = $module; $dist =~ s/::/-/g; $dist };
+    my $naive = do { my $dist = $main_module; $dist =~ s/::/-/g; $dist };
     @install_json = (
         (sort { $b cmp $a } grep {  /^$naive/ } @install_json),
         (sort { $b cmp $a } grep { !/^$naive/ } @install_json),
@@ -183,7 +195,7 @@ sub _find_meta {
         # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
         # So name is main_module!
         my $name = $hash->{name} || "";
-        next if $name ne $module;
+        next if $name ne $main_module;
         my $provides = $hash->{provides} || +{};
         for my $provide (sort keys %$provides) {
             if ($provide eq $module
