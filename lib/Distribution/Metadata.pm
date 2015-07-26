@@ -19,6 +19,8 @@ my $ARCHNAME = $Config{archname};
 
 our $VERSION = "0.02";
 
+our $CACHE;
+
 sub new_from_module {
     my ($class, $module, %option) = @_;
     my $inc = $option{inc} || \@INC;
@@ -134,30 +136,49 @@ sub _fill_archlib {
     \@out;
 }
 
-my $JSON = JSON->new;
+my $decode_install_json = sub {
+    my $file = shift;
+    my $content = do { open my $fh, "<", $file or next; local $/; <$fh> };
+    JSON::decode_json($content);
+};
+sub _decode_install_json {
+    my ($class, $file) = @_;
+    if ($CACHE) {
+        $CACHE->{install_json}{$file} ||= $decode_install_json->($file);
+    } else {
+        $decode_install_json->($file);
+    }
+}
 sub _find_meta {
     my ($class, $module, $version, $dir) = @_;
     return unless -d $dir;
 
+    my @install_json;
+    if ($CACHE and $CACHE->{install_json_collected}) {
+        @install_json = keys %{$CACHE->{install_json}};
+    } else {
+        @install_json = do {
+            opendir my $dh, $dir or die "opendir $dir: $!";
+            my @meta_dir = grep { !/^[.]{1,2}$/ } readdir $dh;
+            grep -f, map { catfile($dir, $_, "install.json") } @meta_dir;
+        };
+        if ($CACHE) {
+            $CACHE->{install_json}{$_} ||= undef for @install_json;
+            $CACHE->{install_json_collected}++;
+        }
+    }
+
     # to speed up, first try distribution which just $module =~ s/::/-/gr;
     my $naive = do { my $dist = $module; $dist =~ s/::/-/g; $dist };
-
-    # note: don't use glob(); it deffers depending on perl version
-    my @install_jsons = do {
-        opendir my $dh, $dir or die "opendir $dir: $!";
-        my @e = grep { !/^[.]{1,2}$/ } readdir $dh;
-        my @sort = (
-            (sort { $b cmp $a } grep {  /^$naive/ } @e),
-            (sort { $b cmp $a } grep { !/^$naive/ } @e),
-        );
-        grep -f, map { catfile($dir, $_, "install.json") } @sort;
-    };
+    @install_json = (
+        (sort { $b cmp $a } grep {  /^$naive/ } @install_json),
+        (sort { $b cmp $a } grep { !/^$naive/ } @install_json),
+    );
 
     my ($meta_directory, $install_json, $install_json_hash, $mymeta_json);
     INSTALL_JSON_LOOP:
-    for my $file (@install_jsons) {
-        my $content = do { open my $fh, "<:utf8", $file or next; local $/; <$fh> };
-        my $hash = $JSON->decode($content);
+    for my $file (@install_json) {
+        my $hash = $class->_decode_install_json($file);
 
         # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
         # So name is main_module!
@@ -196,47 +217,77 @@ sub _naive_packlist {
 # eg: OSX,
 # in .packlist: /var/folders/...
 # but /var/folders/.. is a symlink to /private/var/folders
+my $extract_files = sub {
+    my $packlist = shift;
+    [
+        map  { Cwd::abs_path($_) } grep { -f }
+        sort keys %{ ExtUtils::Packlist->new($packlist) || +{} }
+    ];
+};
 sub _extract_files {
     my ($class, $packlist) = @_;
-    map  { Cwd::abs_path($_) }
-    grep { -f }
-    sort keys %{ ExtUtils::Packlist->new($packlist) || +{} };
+    if ($CACHE) {
+        $CACHE->{packlist}{$packlist} ||= $extract_files->($packlist);
+    } else {
+        $extract_files->($packlist);
+    }
+}
+
+sub _core_packlist {
+    my ($self, $inc) = @_;
+    for my $dir (grep -d, @$inc) {
+        opendir my $dh, $dir or die "Cannot open dir $dir: $!\n";
+        my ($packlist) = map { catfile($dir, $_) } grep {$_ eq ".packlist"} readdir $dh;
+        return $packlist if $packlist;
+    }
+    return;
 }
 
 sub _find_packlist {
     my ($class, $module_file, $inc) = @_;
 
+    if ($CACHE and my $core_packlist = $CACHE->{core_packlist}) {
+        my $files = $class->_extract_files($core_packlist);
+        if (grep {$module_file eq $_} @$files) {
+            return ($core_packlist, $files);
+        }
+    }
+
     # to speed up, first try packlist which is naively guessed by $module_file
     if (my $naive_packlist = $class->_naive_packlist($module_file, $inc)) {
-        my @files = $class->_extract_files($naive_packlist);
-        if ( grep { $module_file eq $_ } @files ) {
+        my $files = $class->_extract_files($naive_packlist);
+        if ( grep { $module_file eq $_ } @$files ) {
             DEBUG and warn "-> naively found packlist: $module_file\n";
-            return ($naive_packlist, \@files);
+            return ($naive_packlist, $files);
         }
     }
 
     my @packlists;
-    for my $dir (grep -d, @$inc) {
-        opendir my $dh, $dir or die "Cannot open dir $dir: $!\n";
-        push @packlists, map { catfile($dir, $_) } grep {$_ eq ".packlist"} readdir $dh;
-    }
-    my @auto = grep -d, map { catdir($_, "auto") } @{$class->_fill_archlib($inc)};
-    find sub {
-        return unless -f;
-        return unless $_ eq ".packlist";
-        push @packlists, $File::Find::name;
-    }, @auto;
-
-    my ($packlist, $files);
-    for my $try (@packlists) {
-        my @files = $class->_extract_files($try);
-        if (grep { $module_file eq $_ } @files) {
-            $packlist = $try;
-            $files = \@files;
-            last;
+    if ($CACHE and $CACHE->{packlist_collected}) {
+        @packlists = keys %{ $CACHE->{packlist} };
+    } else {
+        if (my $core_packlist = $class->_core_packlist($inc)) {
+            push @packlists, $core_packlist;
+            $CACHE->{core_packlist} = $core_packlist if $CACHE;
+        }
+        find sub {
+            return unless -f;
+            return unless $_ eq ".packlist";
+            push @packlists, $File::Find::name;
+        }, grep -d, map { catdir($_, "auto") } @{$class->_fill_archlib($inc)};
+        if ($CACHE) {
+            $CACHE->{packlist}{$_} ||= undef for @packlists;
+            $CACHE->{packlist_collected}++;
         }
     }
-    return ($packlist, $files);
+
+    for my $try (@packlists) {
+        my $files = $class->_extract_files($try);
+        if (grep { $module_file eq $_ } @$files) {
+            return ($try, $files);
+        }
+    }
+    return;
 }
 
 sub _abs_path {
