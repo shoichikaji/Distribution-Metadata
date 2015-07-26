@@ -53,7 +53,7 @@ This module creates Distribution::Metadata objects with cache.
 If you creates many Distribution::Metadata objects,
 then it may take quite a lot of time.
 This is because C<< Distribution::Metadata->new >> scans C<@INC> directories,
-parse packlist files, and parses install.json files many times.
+parses packlist files, and parses install.json files many times.
 
 Distribution::Metadata::Factory caches such results,
 so you can create Distribution::Metadata objects even faster.

@@ -9,4 +9,4 @@ perl:
   - "5.20"
 script:
   - prove -l t xt
-
+sudo: false
