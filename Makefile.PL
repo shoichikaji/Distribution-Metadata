@@ -13,7 +13,9 @@ my %WriteMakefileArgs = (
     "ExtUtils::MakeMaker" => 0
   },
   "DISTNAME" => "Distribution-Metadata",
-  "EXE_FILES" => [],
+  "EXE_FILES" => [
+    "script/which-meta"
+  ],
   "LICENSE" => "perl",
   "MIN_PERL_VERSION" => "5.008001",
   "NAME" => "Distribution::Metadata",
