@@ -19,9 +19,14 @@ my $dist = Distribution::Metadata->new_from_module(
     $module, inc => [@$include, @INC], fill_archlib => 1,
 );
 
-if ($dist->install_json) {
-    print $dist->install_json, "\n";
-    print $dist->mymeta_json, "\n";
+if ($dist->packlist) {
+    print $dist->packlist, "\n";
+    if ($dist->install_json) {
+        print $dist->install_json, "\n";
+        print $dist->mymeta_json, "\n";
+    } else {
+        print "Could not find install.json nor MYMETA.json\n";
+    }
 } else {
     die "Could not find meta files for $module\n";
 }
