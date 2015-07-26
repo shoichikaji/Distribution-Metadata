@@ -2,6 +2,11 @@ Revision history for Perl extension Distribution-Metadata
 
 {{$NEXT}}
 
+0.03  2015-07-26 18:42:39 JST
+
+    - introduce Factory class, which gives speed improvement
+    - fix #2 (distributions which have no "main module" cannot be gathered)
+
 0.02 2015-03-15T19:49:21Z
 
     - document that this module is still in development phase, and API will change without notice
