@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/shoichikaji/Distribution-Metadata.svg?branch=master)](https://travis-ci.org/shoichikaji/Distribution-Metadata)
 # NAME
 
 Distribution::Metadata - gather distribution metadata in local
@@ -190,7 +189,7 @@ when appropriate modules or files cannot be found.
 
 # LICENSE
 
-Copyright (C) Shoichi Kaji.
+Copyright (C) 2015 Shoichi Kaji
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

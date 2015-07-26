@@ -528,7 +528,7 @@ L<App::cpanminus>
 
 =head1 LICENSE
 
-Copyright (C) Shoichi Kaji.
+Copyright (C) 2015 Shoichi Kaji
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
