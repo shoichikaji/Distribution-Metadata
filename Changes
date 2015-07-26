@@ -2,6 +2,8 @@ Revision history for Perl extension Distribution-Metadata
 
 {{$NEXT}}
 
+0.04  2015-07-27 00:29:08 JST
+
     - fix bug; should have cache install.json per directories
 
 0.03  2015-07-26 18:42:39 JST
