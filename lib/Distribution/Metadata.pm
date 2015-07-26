@@ -166,8 +166,8 @@ sub _find_meta {
     return unless -d $dir;
 
     my @install_json;
-    if ($CACHE and $CACHE->{install_json_collected}) {
-        @install_json = keys %{$CACHE->{install_json}};
+    if ($CACHE and $CACHE->{install_json_collected}{$dir}) {
+        @install_json = keys %{$CACHE->{install_json}{$dir}};
     } else {
         @install_json = do {
             opendir my $dh, $dir or die "opendir $dir: $!";
@@ -175,8 +175,8 @@ sub _find_meta {
             grep -f, map { catfile($dir, $_, "install.json") } @meta_dir;
         };
         if ($CACHE) {
-            $CACHE->{install_json}{$_} ||= undef for @install_json;
-            $CACHE->{install_json_collected}++;
+            $CACHE->{install_json}{$dir}{$_} ||= undef for @install_json;
+            $CACHE->{install_json_collected}{$dir}++;
         }
     }
 
