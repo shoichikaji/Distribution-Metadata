@@ -215,22 +215,26 @@ sub _find_packlist {
         }
     }
 
+    my @packlists;
+    for my $dir (grep -d, @$inc) {
+        opendir my $dh, $dir or die "Cannot open dir $dir: $!\n";
+        push @packlists, map { catfile($dir, $_) } grep {$_ eq ".packlist"} readdir $dh;
+    }
+    my @auto = grep -d, map { catdir($_, "auto") } @{$class->_fill_archlib($inc)};
+    find sub {
+        return unless -f;
+        return unless $_ eq ".packlist";
+        push @packlists, $File::Find::name;
+    }, @auto;
+
     my ($packlist, $files);
-    for my $dir ( grep -d, map {(catdir($_, "auto"), $_)} @{ $class->_fill_archlib($inc) } ) {
-        last if $packlist;
-        find {
-            wanted => sub {
-                return if $packlist;
-                return unless -f $_ && basename($_) eq ".packlist";
-                my @files = $class->_extract_files($_);
-                if ( grep { $module_file eq $_ } @files ) {
-                    $packlist = $File::Find::name;
-                    $files = \@files;
-                    return;
-                }
-            },
-            no_chdir => 1,
-        }, $dir;
+    for my $try (@packlists) {
+        my @files = $class->_extract_files($try);
+        if (grep { $module_file eq $_ } @files) {
+            $packlist = $try;
+            $files = \@files;
+            last;
+        }
     }
     return ($packlist, $files);
 }
