@@ -7,19 +7,21 @@ sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
 use Distribution::Metadata::Factory;
 
-my $tempdir = tempdir CLEANUP => 1;
-cpanm "-l$tempdir/local", 'Module::Build';
+my $tempdir1 = tempdir CLEANUP => 1;
+my $tempdir2 = tempdir CLEANUP => 1;
+cpanm "-l$tempdir1/local", 'File::pushd';
+cpanm "-l$tempdir2/local", 'Capture::Tiny';
 my $factory = Distribution::Metadata::Factory->new(
-    inc => ["$tempdir/local/lib/perl5", @INC], fill_archlib => 1,
+    inc => ["$tempdir1/local/lib/perl5", "$tempdir2/local/lib/perl5", @INC], fill_archlib => 1,
 );
 
-# Module::Build in $tempdir/local
-# Module::Metadata in site_lib
-# check Factory take care of install_json in different directories
-my $info1 = $factory->create_from_module("Module::Build");
-my $info2 = $factory->create_from_module("Module::Metadata");
+my $info1 = $factory->create_from_module("File::pushd");
+my $info2 = $factory->create_from_module("Capture::Tiny");
+my $info3 = $factory->create_from_module("ExtUtils::MakeMaker");
 
-ok $info1->install_json;
-ok $info2->install_json;
+
+like $info1->install_json, qr{^$tempdir1/local/lib/perl5};
+like $info2->install_json, qr{^$tempdir2/local/lib/perl5};
+ok $info3->packlist;
 
 done_testing;
