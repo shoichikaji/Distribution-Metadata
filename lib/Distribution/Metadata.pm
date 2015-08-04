@@ -154,9 +154,9 @@ my $decode_install_json = sub {
     JSON::decode_json($content);
 };
 sub _decode_install_json {
-    my ($class, $file) = @_;
+    my ($class, $file, $dir) = @_;
     if ($CACHE) {
-        $CACHE->{install_json}{$file} ||= $decode_install_json->($file);
+        $CACHE->{install_json}{$dir}{$file} ||= $decode_install_json->($file);
     } else {
         $decode_install_json->($file);
     }
@@ -190,7 +190,7 @@ sub _find_meta {
     my ($meta_directory, $install_json, $install_json_hash, $mymeta_json);
     INSTALL_JSON_LOOP:
     for my $file (@install_json) {
-        my $hash = $class->_decode_install_json($file);
+        my $hash = $class->_decode_install_json($file, $dir);
 
         # name VS target ? When LWP, name is LWP, and target is LWP::UserAgent
         # So name is main_module!
@@ -332,7 +332,7 @@ sub mymeta_json_hash {
 sub _distnameinfo {
     my $self = shift;
     return unless my $hash = $self->install_json_hash;
-    $self->{_distnameinfo} = CPAN::DistnameInfo->new( $hash->{pathname} );
+    $self->{_distnameinfo} ||= CPAN::DistnameInfo->new( $hash->{pathname} );
 }
 
 for my $attr (qw(dist version cpanid distvname pathname)) {
