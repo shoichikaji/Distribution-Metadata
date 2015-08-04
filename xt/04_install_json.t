@@ -3,12 +3,15 @@ use warnings;
 use utf8;
 use Test::More;
 use File::Temp 'tempdir';
+use Cwd 'abs_path';
 sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
 use Distribution::Metadata::Factory;
 
 my $tempdir1 = tempdir CLEANUP => 1;
 my $tempdir2 = tempdir CLEANUP => 1;
+$tempdir1 = abs_path $tempdir1;
+$tempdir2 = abs_path $tempdir2;
 cpanm "-l$tempdir1/local", 'File::pushd';
 cpanm "-l$tempdir2/local", 'Capture::Tiny';
 my $factory = Distribution::Metadata::Factory->new(
