@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/shoichikaji/Distribution-Metadata.svg?branch=master)](https://travis-ci.org/shoichikaji/Distribution-Metadata)
+
 # NAME
 
 Distribution::Metadata - gather distribution metadata in local
