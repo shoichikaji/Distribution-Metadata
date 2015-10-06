@@ -537,7 +537,8 @@ main module file path
 
 =item C<< my $files = $info->files >>
 
-file paths which is listed in C<.packlist> file
+file paths which is listed in C<.packlist> file,
+note that paths are acutually C<< Cwd::abs_path() >>-ed
 
 =item C<< my $hash = $info->install_json_hash >>
 

@@ -159,7 +159,8 @@ when appropriate modules or files cannot be found.
 
 - `my $files = $info->files`
 
-    file paths which is listed in `.packlist` file
+    file paths which is listed in `.packlist` file,
+    note that paths are acutually `Cwd::abs_path()`-ed
 
 - `my $hash = $info->install_json_hash`
 
