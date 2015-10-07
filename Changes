@@ -2,6 +2,11 @@ Revision history for Perl extension Distribution-Metadata
 
 {{$NEXT}}
 
+0.05  2015-10-08 00:16:24 JST
+
+    - fix bug agian; should have cache install.json per directories
+    - document that paths are Cwd::abs_path()-ed (#6 reported by zachthompson)
+
 0.04  2015-07-27 00:29:08 JST
 
     - fix bug; should have cache install.json per directories
