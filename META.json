@@ -64,7 +64,7 @@
          "web" : "https://github.com/skaji/Distribution-Metadata"
       }
    },
-   "version" : "0.05",
+   "version" : "0.06",
    "x_contributors" : [
       "Shoichi Kaji <skaji@cpan.org>",
       "Shoichi Kaji <skaji@outlook.com>"
