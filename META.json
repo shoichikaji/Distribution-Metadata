@@ -1,7 +1,7 @@
 {
    "abstract" : "gather distribution metadata in local",
    "author" : [
-      "Shoichi Kaji"
+      "Shoichi Kaji <skaji@cpan.org>"
    ],
    "dynamic_config" : 0,
    "generated_by" : "Dist::Milla version v1.0.18, Dist::Zilla version 6.010, CPAN::Meta::Converter version 2.150010",
@@ -66,7 +66,6 @@
    },
    "version" : "0.06",
    "x_contributors" : [
-      "Shoichi Kaji <skaji@cpan.org>",
       "Shoichi Kaji <skaji@outlook.com>"
    ],
    "x_serialization_backend" : "Cpanel::JSON::XS version 3.0239",

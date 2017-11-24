@@ -190,13 +190,9 @@ when appropriate modules or files cannot be found.
 
 [App::cpanminus](https://metacpan.org/pod/App::cpanminus)
 
-# LICENSE
+# COPYRIGHT AND LICENSE
 
-Copyright (C) 2015 Shoichi Kaji
+Copyright (C) 2015 Shoichi Kaji <skaji@cpan.org>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
-
-# AUTHOR
-
-Shoichi Kaji <skaji@cpan.org>
