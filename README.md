@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/shoichikaji/Distribution-Metadata.svg?branch=master)](https://travis-ci.org/shoichikaji/Distribution-Metadata)
+[![Build Status](https://travis-ci.org/skaji/Distribution-Metadata.svg?branch=master)](https://travis-ci.org/skaji/Distribution-Metadata)
 
 # NAME
 
