@@ -19,6 +19,11 @@
             "Module::Build::Tiny" : "0.034"
          }
       },
+      "develop" : {
+         "requires" : {
+            "File::pushd" : "0"
+         }
+      },
       "runtime" : {
          "requires" : {
             "CPAN::DistnameInfo" : "0",
@@ -26,13 +31,7 @@
             "ExtUtils::Packlist" : "0",
             "JSON" : "0",
             "Module::Metadata" : "0",
-            "perl" : "5.008001"
-         }
-      },
-      "test" : {
-         "requires" : {
-            "File::pushd" : "0",
-            "Test::More" : "0.98"
+            "perl" : "v5.16.0"
          }
       }
    },

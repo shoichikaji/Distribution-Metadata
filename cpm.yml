@@ -6,8 +6,7 @@ prereqs:
       ExtUtils::Packlist:
       JSON:
       Module::Metadata:
-      perl: { version: '5.008001' }
-  test:
+      perl: { version: 'v5.16' }
+  develop:
     requires:
       File::pushd:
-      Test::More: { version: '0.98' }
