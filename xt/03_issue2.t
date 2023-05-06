@@ -13,7 +13,7 @@ sub cpanm { !system "cpanm", "-nq", "--reinstall", @_ or die "cpanm fail"; }
 
 subtest basic => sub {
     my $tempdir = tempdir CLEANUP => 1;
-    cpanm "-l$tempdir/local", 'Role::Identifiable::HasIdent';
+    cpanm "-l$tempdir/local", 'Role::Identifiable::HasIdent@0.007';
     my $info = Distribution::Metadata->new_from_module(
         "Role::Identifiable::HasIdent",
         inc => ["$tempdir/local/lib/perl5"],

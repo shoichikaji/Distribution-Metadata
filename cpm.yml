@@ -1,0 +1,13 @@
+prereqs:
+  runtime:
+    requires:
+      CPAN::DistnameInfo:
+      CPAN::Meta:
+      ExtUtils::Packlist:
+      JSON:
+      Module::Metadata:
+      perl: { version: '5.008001' }
+  test:
+    requires:
+      File::pushd:
+      Test::More: { version: '0.98' }

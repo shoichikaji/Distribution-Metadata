@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/skaji/Distribution-Metadata.svg?branch=master)](https://travis-ci.org/skaji/Distribution-Metadata)
+[![Actions Status](https://github.com/skaji/Distribution-Metadata/actions/workflows/test.yml/badge.svg)](https://github.com/skaji/Distribution-Metadata/actions)
 
 # NAME
 
@@ -186,9 +186,9 @@ when appropriate modules or files cannot be found.
 
 # SEE ALSO
 
-[Module::Metadata](https://metacpan.org/pod/Module::Metadata)
+[Module::Metadata](https://metacpan.org/pod/Module%3A%3AMetadata)
 
-[App::cpanminus](https://metacpan.org/pod/App::cpanminus)
+[App::cpanminus](https://metacpan.org/pod/App%3A%3Acpanminus)
 
 # COPYRIGHT AND LICENSE
 

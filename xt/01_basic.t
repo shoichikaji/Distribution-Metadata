@@ -73,7 +73,7 @@ subtest abs_path => sub {
 
 subtest archlib => sub {
     my $tempdir = tempdir CLEANUP => 1;
-    cpanm "-l$tempdir/local", 'MLEHMANN/common-sense-3.74.tar.gz';
+    cpanm "-l$tempdir/local", 'common::sense@3.74';
     my $info1 = Distribution::Metadata->new_from_module(
         "common::sense",
         inc => ["$tempdir/local/lib/perl5"],
