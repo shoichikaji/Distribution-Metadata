@@ -1,4 +1,4 @@
-package Distribution::Metadata 0.06;
+package Distribution::Metadata 0.10;
 use v5.16;
 use warnings;
 
